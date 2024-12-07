@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Activity_Interaction_Coefficient_Calculator_UEM1.Properties {
+namespace Activity_Interaction_Coefficient_Calculator_UEM2_.Properties {
     using System;
     
     
