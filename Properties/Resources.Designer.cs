@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Activity_Interaction_Coefficient_Calculator_UEM2_.Properties {
+namespace Activity_Interaction_Coefficient_Calculator_UEM1.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM2_.Properties {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Activity_Interaction_Coefficient_Calculator_UEM2_.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Activity_Interaction_Coefficient_Calculator_UEM1.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

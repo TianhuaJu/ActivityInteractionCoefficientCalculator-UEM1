@@ -22,8 +22,8 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         {
 
            
-            byte[] data_Miedema = Activity_Interaction_Coefficient_Calculator_UEM2_.Properties.Resources.BasicData;
-            byte[] data_expDB = Activity_Interaction_Coefficient_Calculator_UEM2_.Properties.Resources.myDB;
+            byte[] data_Miedema = Properties.Resources.BasicData;
+            byte[] data_expDB = Properties.Resources.myDB;
            
             string strPath_db = Application.StartupPath + @"\data\BasicData.db";
             string strPath_expdb = Application.StartupPath + @"\data\myDB.db";
