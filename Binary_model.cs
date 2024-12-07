@@ -243,31 +243,27 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
             fik = fab(Ei, Ek, state)*(1-sij);
 
-            //List<string> elemets_lst = new List<string>() { "Si", "Ge" };
+            List<string> elemets_lst = new List<string>() { "Si", "Ge" };
+            dHtrans_i = Ei.dH_Trans;
+            dHtrans_slv = Ek.dH_Trans;
 
-            //if (state == "liquid")
-            //{
-            //    if (elemets_lst.Contains(Ei.Name))
-            //    {
-            //        dHtrans_i = 0;
-            //    }
-            //    else
-            //    {
-            //        dHtrans_i = Ei.dH_Trans;
-            //    }
+            if (state == "liquid")
+            {
+                if (elemets_lst.Contains(Ei.Name))
+                {
+                    dHtrans_i = 0;
+                }
+                
 
-            //    if (elemets_lst.Contains(Ek.Name))
-            //    {
-            //        dHtrans_slv = 0;
-            //    }
-            //    else
-            //    {
-            //        dHtrans_slv = Ek.dH_Trans;
-            //    }
-            //}
+                if (elemets_lst.Contains(Ek.Name))
+                {
+                    dHtrans_slv = 0;
+                }
+                
+            }
 
-            //dHtrans = dHtrans_slv;
-            dHtrans = Ei.dH_Trans-Ek.dH_Trans;
+            dHtrans = dHtrans_i-dHtrans_slv;
+            
             lnyi0_k = 1000 * fik * Ei.V * (1 + Ei.u * (Ei.Phi - Ek.Phi)) / (Constant.R * T) + 1000 * dHtrans / (Constant.R * T);
 
             return lnyi0_k;
