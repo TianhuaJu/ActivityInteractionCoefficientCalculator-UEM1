@@ -73,7 +73,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             {
                 double P_AB, RP;
                 P_AB = (Ea.isTrans_group && Eb.isTrans_group) ? P_TT : ((Ea.isTrans_group || Eb.isTrans_group) ? P_TN : P_NN);
-                RP = rp(Ea, Eb, state);
+                RP = hybridization_term(Ea, Eb, state);
                 
                 diff = 2 * P_AB * (-pow(Ea.Phi - Eb.Phi, 2.0) + QtoP * pow(Ea.N_WS - Eb.N_WS, 2.0) - RP) / (1.0 / Ea.N_WS + 1.0 / Eb.N_WS);
             }
@@ -87,7 +87,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
      
 
        
-        private double rp(Element _Ea, Element _Eb, string _state)
+        private double hybridization_term(Element _Ea, Element _Eb, string _state)
         {
             double alpha = 0.0;
             if (_state == "solid")
@@ -98,119 +98,12 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             {
                 alpha = 0.73;
             }
-            if (_Ea.hybird_factor == "other" || _Eb.hybird_factor == "other")
-            {
-                return 0.0;
-            }
-            else
-            {
-                return (_Ea.hybird_factor == _Eb.hybird_factor) ? 0.0 : alpha * _Ea.hybird_Value * _Eb.hybird_Value;
-            }
+
+            return (_Ea.hybird_factor == _Eb.hybird_factor) ? 0.0 : alpha * _Ea.hybird_Value * _Eb.hybird_Value;
         }
 
-        /// <summary>
-        /// H(X,Y)二元相互作用项，考虑过剩熵时返回过剩吉布斯自由能，否则返回混合焓,kJ/mol
-        /// </summary>
-        /// <param name="A">元素A</param>
-        /// <param name="B">元素B</param>
-        /// <param name="Xa">A的摩尔组成</param>
-        /// <param name="Xb">B的摩尔组成</param>
-        /// <returns>二元系性质kJ/mol</returns>
-        public double binary_Model(string A, string B, double Xa, double Xb)
-        {
-            setPairElement(A, B);
-
-            double f_AB = fab(this.Ea, this.Eb, this.state);
-            double entropy_term = 0;
-            if (this.isEntropy)
-            {
-                double avg_Tm = 1.0/this.Ea.Tm + 1.0/this.Eb.Tm;
-                if (this.state == "solid")
-                {
-                    entropy_term = 1.0 / 15.1 * avg_Tm * this.T;
-                }
-                else
-                {
-                    entropy_term = 1.0 / 14 * avg_Tm * this.T;
-                }
-
-            }
-            f_AB = f_AB * (1 - entropy_term);
-
-            double Vaa, Vba;
-            (Vaa, Vba) = V_inalloy(this.Ea, this.Eb, Xa, Xb);
-
-            double fB;
-
-            double cA, cB, cAS, cBS;
-            cA = Xa / (Xa + Xb);
-            cB = Xb / (Xa + Xb);
-
-            cAS = cA * Vaa / (cA * Vaa + cB * Vba);
-            cBS = cB * Vba / (cA * Vaa + cB * Vba);
-            fB = cBS * (1 + lammda * Math.Pow(cAS * cBS, 2.0));
-
-            double dH_trans = 0.0;
-            
-            dH_trans = this.Ea.dH_Trans * Xa / (Xa + Xb) + this.Eb.dH_Trans * Xb / (Xa + Xb);
-            
-            return fB * f_AB*cA*Vaa + dH_trans;
-
-
-           
-        }
-       
-    
-       
-        private (double V1, double V2) V_inalloy(Element Ea,Element Eb, double xa, double xb)
-        {
-            double VAa, VBa;
-          
-                double PAx, PBx;
-
-                double new_VAa, new_VBa;
-            double ya, yb;
-            ya = xa/(xa+xb);
-            yb = xb/(xb+xb);
-                
-            DateTime start = DateTime.Now;
-            if (Ea.Name == "H" || Eb.Name == "H")
-            {
-                //H与其它元素形成有序化合物时，合金中的体积
-                VAa = Ea.V;
-                VBa = Eb.V;
-                do
-                {
-                    new_VAa = VAa;
-                    new_VBa = VBa;
-                    PAx = ya * VAa / (ya * VAa + yb * VBa);
-                    PBx = yb * VBa / (ya * VAa + yb * VBa);
-                    VAa = Ea.V * (1 + Ea.u * PBx * (1 + lammda * Math.Pow(PAx * PBx, 2.0)) * (Ea.Phi - Eb.Phi));
-                    VBa = Eb.V * (1 + Eb.u * PAx * (1 + lammda * Math.Pow(PAx * PBx, 2.0)) * (Eb.Phi - Ea.Phi));
-                    DateTime stop = DateTime.Now; //获取代码段执行结束时的时间
-                    TimeSpan tspan = stop - start;
-                    if (tspan.TotalMilliseconds > 15000)
-                    {
-                        break;
-                    }
-
-                } while (VAa != new_VAa && VBa != new_VBa);
-
-            }
-            else
-            {
-                VAa = Ea.V*(1+Ea.u*ya*(Ea.Phi-Eb.Phi));
-                VBa = Eb.V*(1+Eb.u*yb*(Eb.Phi-Ea.Phi));
-            }
-
-            
-            return (VAa, VBa);
-            
-
-        }
-     
  
-        static Dictionary<string, double> df_UEM2 = new Dictionary<string, double>();
+         
         public double kexi(string k, string i, double T, string state = "liquid")
         {
 
@@ -294,11 +187,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
           
 
 
-            Ternary_melts? ternary_ = new Ternary_melts();
-
-            ternary_.setState(state);
-            ternary_.setTemperature(T);
-            ternary_.setEntropy(false);
+           
             double weight1 = 0;
            
             double df_KI, df_KJ;

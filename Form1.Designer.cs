@@ -165,9 +165,9 @@
             label5.Dock = DockStyle.Bottom;
             label5.Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
             label5.ForeColor = Color.FromArgb(255, 128, 0);
-            label5.Location = new Point(850, 8);
+            label5.Location = new Point(850, 13);
             label5.Name = "label5";
-            label5.Size = new Size(204, 27);
+            label5.Size = new Size(204, 22);
             label5.TabIndex = 11;
             label5.Text = "excess entropy";
             label5.TextAlign = ContentAlignment.MiddleCenter;
@@ -225,7 +225,7 @@
             k_comboBox.Items.AddRange(new object[] { "Fe", "Ni", "Co", "Al", "Cu", "Mn" });
             k_comboBox.Location = new Point(6, 41);
             k_comboBox.Name = "k_comboBox";
-            k_comboBox.Size = new Size(202, 39);
+            k_comboBox.Size = new Size(202, 33);
             k_comboBox.TabIndex = 4;
             // 
             // i_comboBox
@@ -236,7 +236,7 @@
             i_comboBox.Items.AddRange(new object[] { "Si", "Cr", "Mn", "C" });
             i_comboBox.Location = new Point(217, 41);
             i_comboBox.Name = "i_comboBox";
-            i_comboBox.Size = new Size(202, 39);
+            i_comboBox.Size = new Size(202, 33);
             i_comboBox.TabIndex = 5;
             // 
             // j_comboBox
@@ -247,7 +247,7 @@
             j_comboBox.Items.AddRange(new object[] { "Co", "Cr", "Mn", "Ni" });
             j_comboBox.Location = new Point(428, 41);
             j_comboBox.Name = "j_comboBox";
-            j_comboBox.Size = new Size(202, 39);
+            j_comboBox.Size = new Size(202, 33);
             j_comboBox.TabIndex = 6;
             // 
             // T_comboBox
@@ -258,7 +258,7 @@
             T_comboBox.Items.AddRange(new object[] { "1873", "1723" });
             T_comboBox.Location = new Point(639, 41);
             T_comboBox.Name = "T_comboBox";
-            T_comboBox.Size = new Size(202, 39);
+            T_comboBox.Size = new Size(202, 33);
             T_comboBox.TabIndex = 7;
             // 
             // tableLayoutPanel2
@@ -273,6 +273,7 @@
             tableLayoutPanel2.Controls.Add(pictureBox3, 0, 2);
             tableLayoutPanel2.Controls.Add(pictureBox2, 0, 1);
             tableLayoutPanel2.Controls.Add(kpbtn, 1, 0);
+            tableLayoutPanel2.Dock = DockStyle.Fill;
             tableLayoutPanel2.Location = new Point(6, 85);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.RowCount = 3;
@@ -379,6 +380,7 @@
             tableLayoutPanel3.Controls.Add(pictureBox5, 0, 2);
             tableLayoutPanel3.Controls.Add(pictureBox6, 0, 1);
             tableLayoutPanel3.Controls.Add(ipbtn, 1, 0);
+            tableLayoutPanel3.Dock = DockStyle.Fill;
             tableLayoutPanel3.Location = new Point(217, 85);
             tableLayoutPanel3.Name = "tableLayoutPanel3";
             tableLayoutPanel3.RowCount = 3;
@@ -484,6 +486,7 @@
             tableLayoutPanel4.Controls.Add(pictureBox8, 0, 2);
             tableLayoutPanel4.Controls.Add(pictureBox9, 0, 1);
             tableLayoutPanel4.Controls.Add(jpbtn, 1, 0);
+            tableLayoutPanel4.Dock = DockStyle.Fill;
             tableLayoutPanel4.Location = new Point(428, 85);
             tableLayoutPanel4.Name = "tableLayoutPanel4";
             tableLayoutPanel4.RowCount = 3;
@@ -684,6 +687,7 @@
             tableLayoutPanel7.Controls.Add(liquidradioButton, 0, 1);
             tableLayoutPanel7.Controls.Add(solidradiobtn, 1, 1);
             tableLayoutPanel7.Controls.Add(label6, 0, 0);
+            tableLayoutPanel7.Dock = DockStyle.Fill;
             tableLayoutPanel7.Location = new Point(211, 5);
             tableLayoutPanel7.Name = "tableLayoutPanel7";
             tableLayoutPanel7.RowCount = 2;
@@ -797,7 +801,7 @@
             JSPS.HeaderText = "exp.";
             JSPS.MinimumWidth = 6;
             JSPS.Name = "JSPS";
-            JSPS.ToolTipText = "Recomended Value(JSPS)";
+            JSPS.ToolTipText = "Recomended Values from JSPS. Remember, some experimental values are not reliable because they do not satisfy the Lupis reciprocal relation.";
             // 
             // rank
             // 

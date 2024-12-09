@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
 {
     internal static class Program

@@ -26,9 +26,6 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         private bool _entropy = false;
         private (bool entropy, bool cp) _condition = (false, false);
         private string _state;
-
-        private (bool entropy, bool cp) condition { get => _condition; }
-        delegate double delgateFfab(Element Ei, Element Ej,bool extra_term = false);
         
         public Ternary_melts(double T, string phaseState = "liquid", bool isSE = false)
         {
@@ -72,7 +69,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// <param name="Ei"></param>
         /// <param name="Ej"></param>
         /// <returns></returns>
-        private double fab_func_ContainS(Element Ei, Element Ej,bool S = false)
+        private double fab_func_ContainS(Element Ei, Element Ej)
         {
             double alpha,Rp, Pij, entropy_term,fij;
             double avg_Tm = 1.0 / Ei.Tm + 1.0 / Ej.Tm;
