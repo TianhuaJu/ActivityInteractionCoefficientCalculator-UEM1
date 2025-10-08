@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Threading;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
+﻿using System.IO;
 
 
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
