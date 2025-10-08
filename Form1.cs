@@ -12,7 +12,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         }
         private string getState()
-        {
+        { 
             if (solidradiobtn.Checked)
             {
                 return "solid";
