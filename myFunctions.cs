@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data;
 using System.IO;
-using System.Windows.Forms;
+
 
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
 {
@@ -49,41 +49,36 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             
            
         }
-     
-        /// <summary>
-        /// 将datagridView表格里的数据转换成DataTable格式
-        /// </summary>
-        /// <param name="dg"></param>
-        /// <returns></returns>
-        private  static DataTable dgViewToDt (DataGridView dg)
+        public static double asymtermJudge(double a, double b, double c)
+        {
+            double t;
+
+            if ((a > 0 && b > 0 && c > 0) || (a < 0 && b < 0 && c < 0))
             {
-            DataTable DT = new DataTable( "SaveResult" );
-            List<string> lst1 = new List<string>();
-            for (int k = 0 ; k < dg.ColumnCount ; k++)
+                if (a * b * c > 0)
                 {
 
-                DT.Columns.Add( dg.Columns[k].HeaderText );
-
+                    t = a > b ? b : a;
+                    return (t > c) ? c : t;
                 }
-            foreach (DataGridViewRow dgRow in dg.Rows)
+                else
                 {
-                if (dgRow.IsNewRow)
-                    {
-                    continue;
-                    }
-                DataRow dtrow = DT.NewRow();
-                for (int i = 0 ; i < dg.Columns.Count  ; i++)
-                    {
-                    dtrow[i] = (dgRow.Cells[i].Value == null) ? "None" : dgRow.Cells[i].Value;
-                    }
-                DT.Rows.Add( dtrow );
 
+
+                    t = a > b ? a : b;
+                    return (t > c) ? t : c;
                 }
-
-            return DT;
 
             }
-    
+            else
+            {
+
+
+                return (a * b > 0) ? c : (a * c > 0 ? b : a);
+            }
+        }
+
+        
         /// <summary>
         /// 一阶相互作用系数单位转换,m to w
         /// </summary>

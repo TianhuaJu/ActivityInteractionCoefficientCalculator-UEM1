@@ -1,0 +1,239 @@
+﻿<Window x:Class="Activity_Interaction_Coefficient_Calculator_UEM1.Window1"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Activity_Interaction_Coefficient_Calculator_UEM1"
+        mc:Ignorable="d"
+        Title="Activity Interaction Coefficients Calculator (UEM1) - WPF" Height="800" Width="1200">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_数据库(_D)">
+                <MenuItem Header="_管理数据库(_M)" Click="ManageDatabase_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Matrix (k)" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Solute (i)" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Solute (j)" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="T (K)" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Model" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="Blue"/>
+                    <TextBlock Grid.Row="0" Grid.Column="5" Text="Excess Entropy" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="DarkOrange"/>
+
+                    <ComboBox x:Name="k_comboBox" Grid.Row="1" Grid.Column="0" Margin="2" VerticalContentAlignment="Center" IsEditable="True">
+                        <ComboBoxItem Content="Fe"/>
+                        <ComboBoxItem Content="Ni"/>
+                        <ComboBoxItem Content="Co"/>
+                        <ComboBoxItem Content="Al"/>
+                        <ComboBoxItem Content="Cu"/>
+                        <ComboBoxItem Content="Mn"/>
+                    </ComboBox>
+                    <ComboBox x:Name="i_comboBox" Grid.Row="1" Grid.Column="1" Margin="2" VerticalContentAlignment="Center" IsEditable="True">
+                        <ComboBoxItem Content="Si"/>
+                        <ComboBoxItem Content="Cr"/>
+                        <ComboBoxItem Content="Mn"/>
+                        <ComboBoxItem Content="C"/>
+                    </ComboBox>
+                    <ComboBox x:Name="j_comboBox" Grid.Row="1" Grid.Column="2" Margin="2" VerticalContentAlignment="Center" IsEditable="True">
+                        <ComboBoxItem Content="Co"/>
+                        <ComboBoxItem Content="Cr"/>
+                        <ComboBoxItem Content="Mn"/>
+                        <ComboBoxItem Content="Ni"/>
+                    </ComboBox>
+                    <ComboBox x:Name="T_comboBox" Grid.Row="1" Grid.Column="3" Margin="2" VerticalContentAlignment="Center" IsEditable="True">
+                        <ComboBoxItem Content="1873"/>
+                        <ComboBoxItem Content="1723"/>
+                    </ComboBox>
+                    <ComboBox x:Name="model_comboBox" Grid.Row="1" Grid.Column="4" Margin="2" VerticalContentAlignment="Center" SelectedIndex="0">
+                        <ComboBoxItem Content="UEM1"/>
+                        <ComboBoxItem Content="UEM2"/>
+                        <ComboBoxItem Content="UEM2_Adv"/>
+                        <ComboBoxItem Content="Toop-Kohler"/>
+                        <ComboBoxItem Content="Toop-Muggianu"/>
+                        <ComboBoxItem Content="Muggianu"/>
+                        <ComboBoxItem Content="GSM"/>
+                    </ComboBox>
+                    <StackPanel Grid.Row="1" Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <RadioButton x:Name="yesentropyradiobtn" Content="Yes" GroupName="Entropy" IsChecked="True"/>
+                        <RadioButton x:Name="noentropyradiobtn" Content="No" GroupName="Entropy" Margin="10,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="2,10,2,2" VerticalAlignment="Center">
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/phi.bmp" Width="32" Height="32" Margin="5" ToolTip="Electronegativity (Φ)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="kPhi_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/nws.bmp" Width="32" Height="32" Margin="5" ToolTip="Electron Density (nws¹/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="kNws_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/v.bmp" Width="32" Height="32" Margin="5" ToolTip="Molar Volume (V²/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="kV_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="2,10,2,2" VerticalAlignment="Center">
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/phi.bmp" Width="32" Height="32" Margin="5" ToolTip="Electronegativity (Φ)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="iPhi_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/nws.bmp" Width="32" Height="32" Margin="5" ToolTip="Electron Density (nws¹/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="iNws_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/V.bmp" Width="32" Height="32" Margin="5" ToolTip="Molar Volume (V²/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="iV_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="2" Margin="2,10,2,2" VerticalAlignment="Center">
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/phi.bmp" Width="32" Height="32" Margin="5" ToolTip="Electronegativity (Φ)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="jPhi_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/nws.bmp" Width="32" Height="32" Margin="5" ToolTip="Electron Density (nws¹/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="jNws_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Images/V.bmp" Width="32" Height="32" Margin="5" ToolTip="Molar Volume (V²/³)"/>
+                            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+                                <TextBlock x:Name="jV_text" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="3" Margin="2,10,2,2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center">
+                            <TextBlock Text="Phase State" FontWeight="Bold" HorizontalAlignment="Center" Foreground="DarkViolet"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                <RadioButton x:Name="liquidradioButton" Content="Liquid" GroupName="Phase" IsChecked="True"/>
+                                <RadioButton x:Name="solidradiobtn" Content="Solid" GroupName="Phase" Margin="10,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="calbtn" Grid.Column="0" Content="Calculate" Margin="5" FontSize="16" FontWeight="Bold" Click="calbtn_Click"/>
+                            <Button x:Name="clearbtn" Grid.Column="1" Content="Clear" Margin="5" FontSize="16" FontWeight="Bold" Click="clearbtn_Click"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="DarkGray"/>
+
+            <DataGrid x:Name="ResultDataGrid" Grid.Row="2" Margin="0,5,0,0"
+                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                      HeadersVisibility="Column" FontSize="14"
+                      HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray">
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        <Setter Property="Background" Value="LightBlue"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Solvent" Binding="{Binding Solvent}" Width="*"/>
+                    <DataGridTextColumn Header="i" Binding="{Binding I}" Width="*"/>
+                    <DataGridTextColumn Header="j" Binding="{Binding J}" Width="*"/>
+                    <DataGridTextColumn Header="calcu." Binding="{Binding Calculate, StringFormat=F3}" Width="*"/>
+                    <DataGridTextColumn Header="exp." Binding="{Binding JSPS}" Width="*"/>
+                    <DataGridTextColumn Header="Rank" Binding="{Binding Rank}" Width="*"/>
+                    <DataGridTextColumn Header="Entropy" Binding="{Binding Entropy}" Width="*"/>
+                    <DataGridTextColumn Header="T (K)" Binding="{Binding Temp, StringFormat=F0}" Width="*"/>
+                    <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
+</Window>

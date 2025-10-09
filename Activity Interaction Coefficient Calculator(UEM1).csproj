@@ -1,22 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <RootNamespace>Activity_Interaction_Coefficient_Calculator_UEM1</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
+	<UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageIcon>Snipaste_2024-12-05_11-09-16.jpg</PackageIcon>
     <StartupObject>Activity_Interaction_Coefficient_Calculator_UEM1.Program</StartupObject>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
     <UseWPF>True</UseWPF>
   </PropertyGroup>
-
+  <ItemGroup>
+    <None Remove="Images\nws.bmp" />
+    <None Remove="Images\phi.bmp" />
+    <None Remove="Images\v.bmp" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Resource Include="Images\nws.bmp" />
+    <Resource Include="Images\phi.bmp" />
+    <Resource Include="Images\v.bmp" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -29,31 +37,30 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Resources\" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.0" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
-    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.10" />
+    <PackageReference Include="MathNet.Numerics" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Include="SQLitePCLRaw.core" />
+    <PackageReference Include="System.Data.SQLite" />
+    
   </ItemGroup>
-
+  <ItemGroup>
+    <Page Include="App.xaml" />
+  </ItemGroup>
   <ItemGroup>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-
 </Project>

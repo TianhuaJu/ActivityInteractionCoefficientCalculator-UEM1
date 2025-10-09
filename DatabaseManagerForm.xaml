@@ -1,0 +1,96 @@
+﻿<Window x:Class="Activity_Interaction_Coefficient_Calculator_UEM1.DatabaseManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="数据库管理 (WPF)" Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <TabControl>
+            <TabItem Header="Miedema参数数据库">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel x:Name="toolbar1" Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="btnRefresh" Content="刷新" Width="100" Height="30" Margin="0,0,10,0" Click="btnRefresh_Click"/>
+                        <Button x:Name="btnSave" Content="保存修改" Width="100" Height="30" Margin="0,0,10,0" Click="btnSave_Click"/>
+                        <Button x:Name="btnDelete" Content="删除选中行" Width="100" Height="30" Margin="0,0,20,0" Click="btnDelete_Click"/>
+
+                        <TextBlock Text="元素符号:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="txtSearch" Width="150" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Button Content="搜索" Width="80" Height="30" Click="btnSearch_Click"/>
+                    </StackPanel>
+
+                    <DataGrid x:Name="dataGridView1" Grid.Row="1" 
+                              AutoGenerateColumns="True"
+                              CanUserAddRows="True"
+                              CanUserDeleteRows="False"
+                              SelectionMode="Extended"
+                              AlternatingRowBackground="LightGray"
+                              GridLinesVisibility="All"
+                              HeadersVisibility="All">
+                    </DataGrid>
+
+                    <TextBlock x:Name="statusLabel" Grid.Row="2" 
+                               Text="准备就绪" 
+                               Margin="0,10,0,0" 
+                               FontWeight="Bold"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="实验数据库">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel x:Name="tableSelectorPanel" Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="选择数据表:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                        <ComboBox x:Name="cmbTables" Width="200" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"
+                                  SelectionChanged="cmbTables_SelectionChanged">
+                        </ComboBox>
+                        <Button Content="🔄 刷新表列表" Width="120" Height="25" Click="btnRefreshTables_Click" Margin="0,0,10,0"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="toolbar2" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="btnRefresh2" Content="刷新" Width="100" Height="30" Margin="0,0,10,0" Click="btnRefresh2_Click"/>
+                        <Button x:Name="btnSave2" Content="保存修改" Width="100" Height="30" Margin="0,0,10,0" Click="btnSave2_Click"/>
+                        <Button x:Name="btnAdd2" Content="➕ 添加新行" Width="100" Height="30" Margin="0,0,10,0" Click="btnAdd2_Click"/>
+                        <Button x:Name="btnDelete2" Content="删除选中行" Width="100" Height="30" Margin="0,0,10,0" Click="btnDelete2_Click"/>
+                        <Button x:Name="btnExport2" Content="📤 导出CSV" Width="100" Height="30" Margin="0,0,20,0" Click="btnExport2_Click"/>
+
+                        <TextBlock Text="溶剂/溶质:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="txtSearch2" Width="150" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Button Content="搜索" Width="80" Height="30" Click="btnSearch2_Click"/>
+                    </StackPanel>
+
+                    <DataGrid x:Name="dataGridView2" Grid.Row="2" 
+                              AutoGenerateColumns="True"
+                              CanUserAddRows="True"
+                              CanUserDeleteRows="False"
+                              SelectionMode="Extended"
+                              AlternatingRowBackground="LightBlue"
+                              GridLinesVisibility="All"
+                              HeadersVisibility="All">
+                    </DataGrid>
+
+                    <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                        <TextBlock x:Name="statusLabel2" 
+                                   Text="准备就绪" 
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+                        <TextBlock Text="💡 提示: 主键 No. 会自动分配，修改数据后点击'保存修改'。使用'添加新行'按钮可快速添加记录。" 
+                                   Foreground="DarkGreen"
+                                   TextWrapping="Wrap"
+                                   FontSize="11"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
