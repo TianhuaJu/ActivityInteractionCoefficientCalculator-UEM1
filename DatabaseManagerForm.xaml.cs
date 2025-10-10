@@ -43,7 +43,26 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         {
             LoadBasicData();
             LoadExperimentTables();
-            LoadExperimentData();
+            // 不要预加载实验数据，等用户切换到实验数据库 Tab 时再加载
+            // LoadExperimentData();  // ❌ 移除这行
+        }
+
+        /// <summary>
+        /// Tab 切换事件处理
+        /// </summary>
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TabControl tabControl && e.Source == tabControl)
+            {
+                if (tabControl.SelectedIndex == 1)  // 实验数据库 Tab (索引从0开始，0=Miedema, 1=实验数据库)
+                {
+                    // 首次切换到实验数据库Tab时，加载数据
+                    if (myDataTable == null)
+                    {
+                        LoadExperimentData();
+                    }
+                }
+            }
         }
 
         #region Miedema参数数据库操作
@@ -1025,4 +1044,4 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         #endregion
     }
-    }
+}
