@@ -1,10 +1,14 @@
-﻿using System.ComponentModel;
+﻿using System;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
+using System.Collections.Generic;
+using System.Linq;
+// ❌ 不要添加: using System.Windows.Forms;
 
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
 {
@@ -16,193 +20,171 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         private DataTable myDataTable;
         private string currentExperimentTable = "first_order";
 
+        /// <summary>
+        /// 统一更新状态标签
+        /// </summary>
+        private void UpdateStatus(string message)
+        {
+            statusLabel.Text = message;
+
+            if (this.FindName("statusLabel2") is System.Windows.Controls.TextBlock statusLabel2)
+            {
+                statusLabel2.Text = message;
+            }
+        }
+
         public DatabaseManagerWindow()
         {
             InitializeComponent();
             this.Loaded += DatabaseManagerForm_Load;
         }
 
-        private async void DatabaseManagerForm_Load(object sender, RoutedEventArgs e)
+        private void DatabaseManagerForm_Load(object sender, RoutedEventArgs e)
         {
-            await LoadBasicDataAsync();
-            await LoadExperimentTablesAsync();
-            await LoadExperimentDataAsync();
+            LoadBasicData();
+            LoadExperimentTables();
+            LoadExperimentData();
         }
 
         #region Miedema参数数据库操作
 
-        private async Task LoadBasicDataAsync(string filter = "")
+        private void LoadBasicData(string filter = "")
         {
-            UpdateStatus("正在加载 Miedema 数据...");
-            toolbar1.IsEnabled = false; // Disable toolbar during load
-
             try
             {
-                basicDataTable = await Task.Run(() =>
+                using (var connection = new SQLiteConnection(basicDbPath))
                 {
-                    var dt = new DataTable();
-                    using (var connection = new SQLiteConnection(basicDbPath))
+                    connection.Open();
+                    string query = "SELECT * FROM Miedema1988";
+                    if (!string.IsNullOrWhiteSpace(filter))
                     {
-                        connection.Open();
-                        string query = "SELECT * FROM Miedema1988";
-                        if (!string.IsNullOrWhiteSpace(filter))
+                        query += " WHERE Symbol LIKE @filter";
+                    }
+
+                    var command = new SQLiteCommand(query, connection);
+                    if (!string.IsNullOrWhiteSpace(filter))
+                    {
+                        command.Parameters.AddWithValue("@filter", $"%{filter}%");
+                    }
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        basicDataTable = new DataTable();
+                        for (int i = 0; i < reader.FieldCount; i++)
                         {
-                            query += " WHERE Symbol LIKE @filter";
+                            basicDataTable.Columns.Add(reader.GetName(i), typeof(string));
                         }
 
-                        var command = new SQLiteCommand(query, connection);
-                        if (!string.IsNullOrWhiteSpace(filter))
+                        while (reader.Read())
                         {
-                            command.Parameters.AddWithValue("@filter", $"%{filter}%");
-                        }
-
-                        // 使用 DataReader 逐行读取，以清洗数据
-                        using (var reader = command.ExecuteReader())
-                        {
-                            // 根据 Reader 的结构创建 DataTable 的列
+                            DataRow row = basicDataTable.NewRow();
                             for (int i = 0; i < reader.FieldCount; i++)
                             {
-                                // 使用 reader.GetFieldType() 来获取更准确的列类型
-                                dt.Columns.Add(reader.GetName(i), reader.GetFieldType(i));
-                            }
-
-                            // 逐行读取并清洗数据
-                            while (reader.Read())
-                            {
-                                DataRow row = dt.NewRow();
-                                for (int i = 0; i < reader.FieldCount; i++)
+                                if (!reader.IsDBNull(i))
                                 {
-                                    if (reader.IsDBNull(i))
+                                    string value = reader.GetValue(i).ToString();
+                                    if (string.IsNullOrWhiteSpace(value) || value == "<>" || value == "N/A" || value == "-")
                                     {
                                         row[i] = DBNull.Value;
                                     }
                                     else
                                     {
-                                        // 检查是否存在无效字符串，如果存在则视为空值
-                                        string valueStr = reader.GetValue(i).ToString();
-                                        if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "<>" || valueStr == "N/A" || valueStr == "-")
-                                        {
-                                            row[i] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            // 尝试转换回原始类型
-                                            try
-                                            {
-                                                row[i] = Convert.ChangeType(valueStr, dt.Columns[i].DataType);
-                                            }
-                                            catch
-                                            {
-                                                // 如果转换失败（例如isTrans列中的<>），也视为空值
-                                                row[i] = DBNull.Value;
-                                            }
-                                        }
+                                        row[i] = value;
                                     }
                                 }
-                                dt.Rows.Add(row);
+                                else
+                                {
+                                    row[i] = DBNull.Value;
+                                }
                             }
-                        }
-
-                        if (dt.Columns.Contains("Symbol"))
-                        {
-                            try
-                            {
-                                dt.PrimaryKey = new DataColumn[] { dt.Columns["Symbol"] };
-                            }
-                            catch (Exception) { /* Ignore if PK cannot be set */ }
+                            basicDataTable.Rows.Add(row);
                         }
                     }
-                    return dt;
-                });
 
-                dataGridView1.ItemsSource = basicDataTable.DefaultView;
-                UpdateStatus($"Miedema参数数据库: 共 {basicDataTable.Rows.Count} 条记录");
+                    try
+                    {
+                        if (basicDataTable.Columns.Contains("Symbol"))
+                        {
+                            basicDataTable.PrimaryKey = new DataColumn[] { basicDataTable.Columns["Symbol"] };
+                        }
+                    }
+                    catch (Exception) { }
+
+                    basicDataTable.AcceptChanges();
+                    dataGridView1.ItemsSource = basicDataTable.DefaultView;
+                    UpdateStatus($"Miedema参数数据库: 共 {basicDataTable.Rows.Count} 条记录");
+                }
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"加载Miedema数据失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                UpdateStatus("加载 Miedema 数据失败");
             }
-            finally
+        }
+
+        private void btnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            LoadBasicData();
+            if (this.FindName("txtSearch") is System.Windows.Controls.TextBox txtSearch)
             {
-                toolbar1.IsEnabled = true;
+                txtSearch.Clear();
             }
         }
 
-        private async void btnRefresh_Click(object sender, RoutedEventArgs e)
+        private void btnSearch_Click(object sender, RoutedEventArgs e)
         {
-            txtSearch.Clear();
-            await LoadBasicDataAsync();
+            if (this.FindName("txtSearch") is System.Windows.Controls.TextBox txtSearch)
+            {
+                LoadBasicData(txtSearch.Text.Trim());
+            }
         }
 
-        private async void btnSearch_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadBasicDataAsync(txtSearch.Text.Trim());
-        }
-
-        private void btnSave_Click(object sender, RoutedEventArgs e)
+        private void ForceEndEdit(System.Windows.Controls.DataGrid dataGrid)
         {
             try
             {
-                // Ensure any pending edits are committed to the DataTable
-                dataGridView1.CommitEdit(DataGridEditingUnit.Row, true);
-
-                DataTable changes = basicDataTable.GetChanges();
-                if (changes == null || changes.Rows.Count == 0)
+                if (dataGrid.CurrentCell != null)
                 {
-                    System.Windows.MessageBox.Show("没有检测到需要保存的修改。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
+                    dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+                    dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
                 }
 
-                // --- Validation specific to Miedema table ---
-                if (!ValidateSymbolUniqueness(changes, out List<string> duplicateSymbols))
-                {
-                    string errorMsg = $"检测到重复或空的 Symbol，无法保存! \n\n重复项: {string.Join(", ", duplicateSymbols)}\n\nSymbol 必须是唯一的，请修改后再保存。";
-                    System.Windows.MessageBox.Show(errorMsg, "Symbol 重复错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
+                var selectedItems = dataGrid.SelectedItems.Cast<object>().ToList();
+                dataGrid.UnselectAll();
+                statusLabel.Focus();
+                Dispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
 
-                // --- Standard Save Logic using CommandBuilder ---
-                using (var connection = new SQLiteConnection(basicDbPath))
+                foreach (var item in selectedItems)
                 {
-                    connection.Open();
-                    var adapter = new SQLiteDataAdapter("SELECT * FROM Miedema1988", connection);
-                    var commandBuilder = new SQLiteCommandBuilder(adapter);
-
-                    int rowsAffected = adapter.Update(basicDataTable);
-                    System.Windows.MessageBox.Show($"✅ 数据保存成功!\n\n更新了 {rowsAffected} 行", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
-                    UpdateStatus($"数据已保存 ({rowsAffected} 行受影响)");
+                    dataGrid.SelectedItems.Add(item);
                 }
             }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"保存数据失败: {ex.Message}\n\n可能原因: 违反了数据库约束(如Symbol重复)。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                // Optional: You might want to reload the data to discard failed changes
-                // LoadBasicDataAsync(); 
-            }
+            catch { }
         }
 
         private bool ValidateSymbolUniqueness(DataTable changes, out List<string> duplicateSymbols)
         {
             duplicateSymbols = new List<string>();
-            var allSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. Load all existing, unchanged symbols
+            if (!basicDataTable.Columns.Contains("Symbol"))
+                return true;
+
+            var existingSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (DataRow row in basicDataTable.Rows)
             {
-                if (row.RowState != DataRowState.Deleted && row.RowState != DataRowState.Added)
+                if (row.RowState == DataRowState.Unchanged && row["Symbol"] != DBNull.Value)
                 {
-                    // For modified rows, add the original value to check against changes
-                    var version = row.RowState == DataRowState.Modified ? DataRowVersion.Original : DataRowVersion.Current;
-                    if (row.HasVersion(version) && row["Symbol", version] != DBNull.Value)
-                        allSymbols.Add(row["Symbol", version].ToString());
+                    string symbol = row["Symbol"].ToString();
+                    if (!string.IsNullOrWhiteSpace(symbol))
+                    {
+                        existingSymbols.Add(symbol.Trim());
+                    }
                 }
             }
 
-            // 2. Check new and modified symbols in the changes for uniqueness
             foreach (DataRow row in changes.Rows)
             {
-                if (row.RowState == DataRowState.Deleted) continue;
+                if (row.RowState == DataRowState.Deleted)
+                    continue;
 
                 if (row["Symbol"] == DBNull.Value || string.IsNullOrWhiteSpace(row["Symbol"].ToString()))
                 {
@@ -210,13 +192,269 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                     continue;
                 }
 
-                string newSymbol = row["Symbol"].ToString();
-                if (!allSymbols.Add(newSymbol)) // .Add returns false if item already exists
+                string newSymbol = row["Symbol"].ToString().Trim();
+
+                if (row.RowState == DataRowState.Added)
                 {
-                    duplicateSymbols.Add(newSymbol);
+                    if (existingSymbols.Contains(newSymbol))
+                    {
+                        duplicateSymbols.Add(newSymbol);
+                    }
+                    else
+                    {
+                        existingSymbols.Add(newSymbol);
+                    }
+                }
+                else if (row.RowState == DataRowState.Modified)
+                {
+                    string originalSymbol = row["Symbol", DataRowVersion.Original].ToString().Trim();
+
+                    if (!newSymbol.Equals(originalSymbol, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (existingSymbols.Contains(newSymbol))
+                        {
+                            duplicateSymbols.Add($"{newSymbol} (原: {originalSymbol})");
+                        }
+                        else
+                        {
+                            existingSymbols.Remove(originalSymbol);
+                            existingSymbols.Add(newSymbol);
+                        }
+                    }
                 }
             }
+
+            var changesSymbols = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataRow row in changes.Rows)
+            {
+                if (row.RowState == DataRowState.Deleted)
+                    continue;
+
+                if (row["Symbol"] != DBNull.Value && !string.IsNullOrWhiteSpace(row["Symbol"].ToString()))
+                {
+                    string symbol = row["Symbol"].ToString().Trim();
+                    if (changesSymbols.ContainsKey(symbol))
+                    {
+                        changesSymbols[symbol]++;
+                    }
+                    else
+                    {
+                        changesSymbols[symbol] = 1;
+                    }
+                }
+            }
+
+            foreach (var kvp in changesSymbols.Where(x => x.Value > 1))
+            {
+                if (!duplicateSymbols.Contains(kvp.Key))
+                {
+                    duplicateSymbols.Add($"{kvp.Key} (在本次变更中重复 {kvp.Value} 次)");
+                }
+            }
+
             return duplicateSymbols.Count == 0;
+        }
+
+        private void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ForceEndEdit(dataGridView1);
+
+                DataTable changes = basicDataTable.GetChanges();
+                if (changes == null || changes.Rows.Count == 0)
+                {
+                    System.Windows.MessageBox.Show(
+                        "没有检测到需要保存的修改!\n\n" +
+                        "提示:\n" +
+                        "• 如果您刚刚修改了数据，请确保:\n" +
+                        "  1. 修改后按 Enter 键或点击其他单元格\n" +
+                        "  2. 不要只是选中空行\n" +
+                        "  3. 确保实际输入了内容\n" +
+                        "• 如果问题持续，请尝试:\n" +
+                        "  1. 修改数据\n" +
+                        "  2. 点击其他地方\n" +
+                        "  3. 等待1秒\n" +
+                        "  4. 再点击保存",
+                        "提示",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                List<string> duplicateSymbols;
+                if (!ValidateSymbolUniqueness(changes, out duplicateSymbols))
+                {
+                    var message = new StringBuilder();
+                    message.AppendLine("❌ 检测到重复的 Symbol，无法保存!");
+                    message.AppendLine();
+                    message.AppendLine("重复的 Symbol 列表:");
+                    foreach (var symbol in duplicateSymbols)
+                    {
+                        message.AppendLine($"  • {symbol}");
+                    }
+                    message.AppendLine();
+                    message.AppendLine("提示: Symbol 必须是唯一的，请修改后再保存。");
+
+                    System.Windows.MessageBox.Show(
+                        message.ToString(),
+                        "Symbol 重复错误",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                bool hasEmptySymbol = false;
+                foreach (DataRow row in changes.Rows)
+                {
+                    if (row.RowState != DataRowState.Deleted)
+                    {
+                        if (row["Symbol"] == DBNull.Value || string.IsNullOrWhiteSpace(row["Symbol"].ToString()))
+                        {
+                            hasEmptySymbol = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hasEmptySymbol)
+                {
+                    System.Windows.MessageBox.Show(
+                        "❌ 检测到空的 Symbol 值!\n\nSymbol 是主键，不能为空。\n请填写所有 Symbol 后再保存。",
+                        "Symbol 为空错误",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                using (var connection = new SQLiteConnection(basicDbPath))
+                {
+                    connection.Open();
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            foreach (DataRow row in changes.Rows)
+                            {
+                                if (row.RowState == DataRowState.Modified)
+                                {
+                                    var updateCmd = BuildUpdateCommand(connection, row);
+                                    updateCmd.ExecuteNonQuery();
+                                }
+                                else if (row.RowState == DataRowState.Added)
+                                {
+                                    var insertCmd = BuildInsertCommand(connection, row);
+                                    insertCmd.ExecuteNonQuery();
+                                }
+                                else if (row.RowState == DataRowState.Deleted)
+                                {
+                                    string symbol = row["Symbol", DataRowVersion.Original].ToString();
+                                    if (!string.IsNullOrEmpty(symbol))
+                                    {
+                                        var deleteCmd = new SQLiteCommand("DELETE FROM Miedema1988 WHERE Symbol = @Symbol", connection);
+                                        deleteCmd.Parameters.AddWithValue("@Symbol", symbol);
+                                        deleteCmd.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+                            transaction.Commit();
+                            basicDataTable.AcceptChanges();
+
+                            System.Windows.MessageBox.Show("✅ 数据保存成功!", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                            UpdateStatus("数据已保存");
+                        }
+                        catch (SQLiteException sqlEx)
+                        {
+                            transaction.Rollback();
+
+                            if (sqlEx.Message.Contains("UNIQUE") || sqlEx.Message.Contains("constraint"))
+                            {
+                                System.Windows.MessageBox.Show(
+                                    $"❌ 数据库约束错误: Symbol 重复!\n\n{sqlEx.Message}\n\n提示: 可能是数据库中已存在相同的 Symbol。",
+                                    "数据库错误",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error);
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"保存数据失败: {ex.Message}\n\n详细信息: {ex.StackTrace}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private SQLiteCommand BuildUpdateCommand(SQLiteConnection connection, DataRow row)
+        {
+            var command = connection.CreateCommand();
+            var sb = new StringBuilder("UPDATE Miedema1988 SET ");
+
+            bool first = true;
+            foreach (DataColumn col in basicDataTable.Columns)
+            {
+                if (col.ColumnName.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!first)
+                    sb.Append(", ");
+
+                sb.Append($"{col.ColumnName} = @{col.ColumnName}");
+                first = false;
+            }
+
+            sb.Append(" WHERE Symbol = @Symbol");
+            command.CommandText = sb.ToString();
+
+            foreach (DataColumn col in basicDataTable.Columns)
+            {
+                object value = row[col.ColumnName];
+                command.Parameters.AddWithValue($"@{col.ColumnName}",
+                    value == DBNull.Value ? (object)DBNull.Value : value);
+            }
+
+            return command;
+        }
+
+        private SQLiteCommand BuildInsertCommand(SQLiteConnection connection, DataRow row)
+        {
+            var command = connection.CreateCommand();
+            var sbColumns = new StringBuilder();
+            var sbValues = new StringBuilder();
+
+            bool first = true;
+            foreach (DataColumn col in basicDataTable.Columns)
+            {
+                if (!first)
+                {
+                    sbColumns.Append(", ");
+                    sbValues.Append(", ");
+                }
+
+                sbColumns.Append(col.ColumnName);
+                sbValues.Append($"@{col.ColumnName}");
+                first = false;
+            }
+
+            command.CommandText = $"INSERT INTO Miedema1988 ({sbColumns}) VALUES ({sbValues})";
+
+            foreach (DataColumn col in basicDataTable.Columns)
+            {
+                object value = row[col.ColumnName];
+                command.Parameters.AddWithValue($"@{col.ColumnName}",
+                    value == DBNull.Value ? (object)DBNull.Value : value);
+            }
+
+            return command;
         }
 
         private void btnDelete_Click(object sender, RoutedEventArgs e)
@@ -227,21 +465,46 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 return;
             }
 
-            var result = System.Windows.MessageBox.Show($"确定要删除选中的 {dataGridView1.SelectedItems.Count} 行吗？\n删除后需要点击“保存修改”按钮以生效。", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show("确定要删除选中的行吗？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result == MessageBoxResult.Yes)
             {
                 try
                 {
-                    var rowsToDelete = dataGridView1.SelectedItems.Cast<DataRowView>().ToList();
-                    foreach (var rowView in rowsToDelete)
+                    using (var connection = new SQLiteConnection(basicDbPath))
                     {
-                        rowView.Row.Delete();
+                        connection.Open();
+                        using (var transaction = connection.BeginTransaction())
+                        {
+                            try
+                            {
+                                foreach (var item in dataGridView1.SelectedItems)
+                                {
+                                    if (item is DataRowView rowView)
+                                    {
+                                        string symbol = rowView.Row["Symbol"].ToString();
+                                        if (!string.IsNullOrEmpty(symbol))
+                                        {
+                                            var cmd = new SQLiteCommand("DELETE FROM Miedema1988 WHERE Symbol = @Symbol", connection);
+                                            cmd.Parameters.AddWithValue("@Symbol", symbol);
+                                            cmd.ExecuteNonQuery();
+                                        }
+                                    }
+                                }
+                                transaction.Commit();
+                                System.Windows.MessageBox.Show("✅ 删除成功!", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                                LoadBasicData();
+                            }
+                            catch
+                            {
+                                transaction.Rollback();
+                                throw;
+                            }
+                        }
                     }
-                    UpdateStatus($"已标记 {rowsToDelete.Count} 行待删除。请点击“保存修改”来确认。");
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"标记删除失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"删除失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -249,240 +512,414 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         #region 实验数据库操作
 
-        private async Task LoadExperimentTablesAsync()
+        private void LoadExperimentTables()
         {
-            UpdateStatus("正在加载表列表...");
-            tableSelectorPanel.IsEnabled = false;
             try
             {
-                List<string> tables = await Task.Run(() =>
+                using (var connection = new SQLiteConnection(myDbPath))
                 {
-                    var tableList = new List<string>();
-                    using (var connection = new SQLiteConnection(myDbPath))
+                    connection.Open();
+                    var tables = new List<string>();
+
+                    var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", connection);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        connection.Open();
-                        var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name", connection);
-                        using (var reader = cmd.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
+                            string tableName = reader.GetString(0);
+                            if (!tableName.StartsWith("sqlite_"))
                             {
-                                tableList.Add(reader.GetString(0));
+                                tables.Add(tableName);
                             }
                         }
                     }
-                    return tableList;
-                });
 
-                cmbTables.ItemsSource = tables;
-                if (tables.Contains(currentExperimentTable))
-                {
-                    cmbTables.SelectedItem = currentExperimentTable;
-                }
-                else if (tables.Count > 0)
-                {
-                    cmbTables.SelectedIndex = 0;
+                    if (this.FindName("cmbTables") is System.Windows.Controls.ComboBox cmbTables)
+                    {
+                        cmbTables.ItemsSource = tables;
+                        if (tables.Contains(currentExperimentTable))
+                        {
+                            cmbTables.SelectedItem = currentExperimentTable;
+                        }
+                        else if (tables.Count > 0)
+                        {
+                            cmbTables.SelectedIndex = 0;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"加载表列表失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                tableSelectorPanel.IsEnabled = true;
-            }
         }
 
-        private async void cmbTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void cmbTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cmbTables.SelectedItem == null || e.AddedItems.Count == 0) return;
-
-            string newTable = e.AddedItems[0].ToString();
-            if (newTable == currentExperimentTable) return;
-
-            if (myDataTable != null && myDataTable.GetChanges() != null)
+            if (sender is System.Windows.Controls.ComboBox cmb && cmb.SelectedItem != null)
             {
-                var result = System.Windows.MessageBox.Show("当前表有未保存的修改，切换表会丢失这些修改。\n\n是否继续？", "警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.No)
+                string newTable = cmb.SelectedItem.ToString();
+                if (newTable != currentExperimentTable)
                 {
-                    cmbTables.SelectedItem = currentExperimentTable;
-                    return;
+                    if (myDataTable != null && myDataTable.GetChanges() != null)
+                    {
+                        var result = System.Windows.MessageBox.Show(
+                            "当前表有未保存的修改，切换表会丢失这些修改。\n\n是否继续？",
+                            "警告",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Warning);
+
+                        if (result == MessageBoxResult.No)
+                        {
+                            cmb.SelectedItem = currentExperimentTable;
+                            return;
+                        }
+                    }
+
+                    currentExperimentTable = newTable;
+                    LoadExperimentData();
                 }
             }
-
-            currentExperimentTable = newTable;
-            await LoadExperimentDataAsync();
         }
 
-        private async void btnRefreshTables_Click(object sender, RoutedEventArgs e)
+        private void btnRefreshTables_Click(object sender, RoutedEventArgs e)
         {
-            await LoadExperimentTablesAsync();
-            System.Windows.MessageBox.Show("? 表列表已刷新!", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            LoadExperimentTables();
+            System.Windows.MessageBox.Show("✅ 表列表已刷新!", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private async Task<string> GetPrimaryKeyColumnAsync(string tableName)
+        private string GetPrimaryKeyColumn(string tableName)
         {
-            return await Task.Run(() =>
+            try
             {
-                try
+                using (var connection = new SQLiteConnection(myDbPath))
                 {
-                    using (var connection = new SQLiteConnection(myDbPath))
+                    connection.Open();
+                    var cmd = new SQLiteCommand($"PRAGMA table_info({tableName})", connection);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        connection.Open();
-                        var cmd = new SQLiteCommand($"PRAGMA table_info('{tableName}')", connection);
-                        using (var reader = cmd.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
+                            bool isPrimaryKey = reader.GetInt32(5) > 0;
+                            if (isPrimaryKey)
                             {
-                                if (reader.GetInt32(5) > 0)
-                                    return reader.GetString(1);
+                                return reader.GetString(1);
                             }
                         }
                     }
                 }
-                catch { }
-                return null;
-            });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"获取主键失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            return null;
         }
 
-        private async Task LoadExperimentDataAsync(string filter = "")
+        private void LoadExperimentData(string filter = "")
         {
-            if (string.IsNullOrEmpty(currentExperimentTable)) return;
-
-            UpdateStatus($"正在加载 [{currentExperimentTable}] 数据...");
-            toolbar2.IsEnabled = false;
-
             try
             {
-                string primaryKey = await GetPrimaryKeyColumnAsync(currentExperimentTable);
-
-                myDataTable = await Task.Run(() =>
+                using (var connection = new SQLiteConnection(myDbPath))
                 {
-                    var dt = new DataTable();
-                    using (var connection = new SQLiteConnection(myDbPath))
+                    connection.Open();
+                    string query = $"SELECT * FROM {currentExperimentTable}";
+
+                    if (!string.IsNullOrWhiteSpace(filter))
                     {
-                        connection.Open();
-                        string query = $"SELECT * FROM {currentExperimentTable}";
-
-                        if (!string.IsNullOrWhiteSpace(filter) && currentExperimentTable == "first_order")
+                        if (currentExperimentTable == "first_order")
                         {
-                            query += " WHERE solv LIKE @filter OR solui LIKE @filter OR soluj LIKE @filter";
+                            query += " WHERE solv LIKE @filter OR solui LIKE @filter OR soluj LIKE @filter OR CAST([No.] AS TEXT) LIKE @filter";
                         }
-
-                        var command = new SQLiteCommand(query, connection);
-                        if (!string.IsNullOrWhiteSpace(filter))
+                        else
                         {
-                            command.Parameters.AddWithValue("@filter", $"%{filter}%");
-                        }
-
-                        var adapter = new SQLiteDataAdapter(command);
-                        adapter.Fill(dt);
-
-                        if (!string.IsNullOrEmpty(primaryKey) && dt.Columns.Contains(primaryKey))
-                        {
-                            try { dt.PrimaryKey = new DataColumn[] { dt.Columns[primaryKey] }; } catch { }
+                            query += " WHERE 1=0";
                         }
                     }
-                    return dt;
-                });
 
-                dataGridView2.ItemsSource = myDataTable.DefaultView;
-                string pkInfo = myDataTable.PrimaryKey.Length > 0 ? $" (主键: {myDataTable.PrimaryKey[0].ColumnName})" : " (警告: 无主键)";
-                UpdateStatus($"实验数据库 [{currentExperimentTable}]: 共 {myDataTable.Rows.Count} 条记录{pkInfo}");
+                    var command = new SQLiteCommand(query, connection);
+                    if (!string.IsNullOrWhiteSpace(filter))
+                    {
+                        command.Parameters.AddWithValue("@filter", $"%{filter}%");
+                    }
+
+                    var adapter = new SQLiteDataAdapter(command);
+                    myDataTable = new DataTable();
+                    adapter.Fill(myDataTable);
+
+                    try
+                    {
+                        string primaryKey = GetPrimaryKeyColumn(currentExperimentTable);
+                        if (!string.IsNullOrEmpty(primaryKey) && myDataTable.Columns.Contains(primaryKey))
+                        {
+                            myDataTable.PrimaryKey = new DataColumn[] { myDataTable.Columns[primaryKey] };
+                        }
+                    }
+                    catch (Exception) { }
+
+                    myDataTable.AcceptChanges();
+                    dataGridView2.ItemsSource = myDataTable.DefaultView;
+
+                    string pkInfo = "";
+                    if (myDataTable.PrimaryKey.Length > 0)
+                    {
+                        pkInfo = $" (主键: {myDataTable.PrimaryKey[0].ColumnName})";
+                    }
+
+                    UpdateStatus($"实验数据库 [{currentExperimentTable}]: 共 {myDataTable.Rows.Count} 条记录{pkInfo}");
+                }
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"加载实验数据失败: {ex.Message}\n\n表名: {currentExperimentTable}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                UpdateStatus($"加载 [{currentExperimentTable}] 失败");
             }
-            finally
+        }
+
+        private void btnRefresh2_Click(object sender, RoutedEventArgs e)
+        {
+            LoadExperimentData();
+            if (this.FindName("txtSearch2") is System.Windows.Controls.TextBox txtSearch2)
             {
-                toolbar2.IsEnabled = true;
+                txtSearch2.Clear();
             }
         }
 
-        private async void btnRefresh2_Click(object sender, RoutedEventArgs e)
+        private void btnSearch2_Click(object sender, RoutedEventArgs e)
         {
-            txtSearch2.Clear();
-            await LoadExperimentDataAsync();
-        }
-
-        private async void btnSearch2_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadExperimentDataAsync(txtSearch2.Text.Trim());
+            if (this.FindName("txtSearch2") is System.Windows.Controls.TextBox txtSearch2)
+            {
+                LoadExperimentData(txtSearch2.Text.Trim());
+            }
         }
 
         private void btnSave2_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // *** FIX 1: Force pending edits to commit ***
                 ForceEndEdit(dataGridView2);
 
                 DataTable changes = myDataTable.GetChanges();
 
                 if (changes == null || changes.Rows.Count == 0)
                 {
-                    System.Windows.MessageBox.Show("没有检测到需要保存的修改!", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show(
+                        $"没有检测到需要保存的修改!\n\n" +
+                        $"提示:\n" +
+                        $"• 修改单元格后，请按 Enter 键或点击其他单元格\n" +
+                        $"• 不要只是选中空行\n" +
+                        $"• 如果问题持续，尝试:\n" +
+                        $"  1. 修改数据\n" +
+                        $"  2. 点击其他地方\n" +
+                        $"  3. 等待1秒\n" +
+                        $"  4. 再点击保存",
+                        "提示",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     return;
                 }
 
                 if (myDataTable.PrimaryKey.Length == 0)
                 {
-                    System.Windows.MessageBox.Show($"警告: 表 '{currentExperimentTable}' 没有主键，可能导致更新失败。", "主键警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    var result = System.Windows.MessageBox.Show(
+                        $"警告: 表 '{currentExperimentTable}' 没有设置主键!\n\n" +
+                        $"没有主键可能导致更新失败。建议:\n" +
+                        $"1. 为表添加主键列（如 No. 或 id）\n" +
+                        $"2. 使用 SQLite 工具修改表结构\n\n" +
+                        $"是否仍要尝试保存？",
+                        "主键警告",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.No)
+                        return;
                 }
 
                 using (var connection = new SQLiteConnection(myDbPath))
                 {
                     connection.Open();
-                    var adapter = new SQLiteDataAdapter($"SELECT * FROM {currentExperimentTable}", connection);
-                    var commandBuilder = new SQLiteCommandBuilder(adapter);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            int rowsAffected = 0;
+                            string pkColumn = myDataTable.PrimaryKey.Length > 0 ? myDataTable.PrimaryKey[0].ColumnName : null;
 
-                    int rowsAffected = adapter.Update(myDataTable);
-                    System.Windows.MessageBox.Show($"? 数据保存成功!\n\n更新了 {rowsAffected} 行", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
-                    UpdateStatus($"数据已保存 ({rowsAffected} 行受影响)");
+                            foreach (DataRow row in changes.Rows)
+                            {
+                                if (row.RowState == DataRowState.Modified)
+                                {
+                                    var updateCmd = BuildExperimentUpdateCommand(connection, row, pkColumn);
+                                    rowsAffected += updateCmd.ExecuteNonQuery();
+                                }
+                                else if (row.RowState == DataRowState.Added)
+                                {
+                                    var insertCmd = BuildExperimentInsertCommand(connection, row);
+                                    rowsAffected += insertCmd.ExecuteNonQuery();
+                                }
+                                else if (row.RowState == DataRowState.Deleted)
+                                {
+                                    if (!string.IsNullOrEmpty(pkColumn))
+                                    {
+                                        var pkValue = row[pkColumn, DataRowVersion.Original];
+                                        var deleteCmd = new SQLiteCommand($"DELETE FROM [{currentExperimentTable}] WHERE [{pkColumn}] = @pkValue", connection);
+                                        deleteCmd.Parameters.AddWithValue("@pkValue", pkValue);
+                                        rowsAffected += deleteCmd.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+
+                            transaction.Commit();
+                            myDataTable.AcceptChanges();
+
+                            System.Windows.MessageBox.Show(
+                                $"✅ 数据保存成功!\n\n更新了 {rowsAffected} 行",
+                                "成功",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+
+                            UpdateStatus($"数据已保存 ({rowsAffected} 行受影响)");
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            System.Windows.MessageBox.Show(
+                                $"保存失败: {ex.Message}\n\n" +
+                                $"可能的原因:\n" +
+                                $"• 表 '{currentExperimentTable}' 缺少主键\n" +
+                                $"• 违反了唯一性约束\n" +
+                                $"• 数据类型不匹配\n\n" +
+                                $"建议: 确保表有主键，并检查数据的有效性。",
+                                "保存错误",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"保存失败: {ex.Message}\n\n可能原因: 违反了唯一性约束或数据类型不匹配。", "保存错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(
+                    $"保存数据失败: {ex.Message}\n\n详细信息:\n{ex.StackTrace}",
+                    "错误",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
+        }
+
+        private SQLiteCommand BuildExperimentUpdateCommand(SQLiteConnection connection, DataRow row, string pkColumn)
+        {
+            var command = connection.CreateCommand();
+            var sb = new StringBuilder($"UPDATE [{currentExperimentTable}] SET ");
+
+            bool first = true;
+            foreach (DataColumn col in myDataTable.Columns)
+            {
+                // 跳过主键列
+                if (!string.IsNullOrEmpty(pkColumn) && col.ColumnName.Equals(pkColumn, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!first)
+                    sb.Append(", ");
+
+                sb.Append($"[{col.ColumnName}] = @{col.ColumnName.Replace(".", "_")}");
+                first = false;
+            }
+
+            if (!string.IsNullOrEmpty(pkColumn))
+            {
+                sb.Append($" WHERE [{pkColumn}] = @pk_value");
+            }
+
+            command.CommandText = sb.ToString();
+
+            // 添加参数
+            foreach (DataColumn col in myDataTable.Columns)
+            {
+                if (!string.IsNullOrEmpty(pkColumn) && col.ColumnName.Equals(pkColumn, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                object value = row[col.ColumnName];
+                command.Parameters.AddWithValue($"@{col.ColumnName.Replace(".", "_")}",
+                    value == DBNull.Value ? (object)DBNull.Value : value);
+            }
+
+            if (!string.IsNullOrEmpty(pkColumn))
+            {
+                command.Parameters.AddWithValue("@pk_value", row[pkColumn, DataRowVersion.Original]);
+            }
+
+            return command;
+        }
+
+        private SQLiteCommand BuildExperimentInsertCommand(SQLiteConnection connection, DataRow row)
+        {
+            var command = connection.CreateCommand();
+            var sbColumns = new StringBuilder();
+            var sbValues = new StringBuilder();
+
+            bool first = true;
+            foreach (DataColumn col in myDataTable.Columns)
+            {
+                if (!first)
+                {
+                    sbColumns.Append(", ");
+                    sbValues.Append(", ");
+                }
+
+                sbColumns.Append($"[{col.ColumnName}]");
+                sbValues.Append($"@{col.ColumnName.Replace(".", "_")}");
+                first = false;
+            }
+
+            command.CommandText = $"INSERT INTO [{currentExperimentTable}] ({sbColumns}) VALUES ({sbValues})";
+
+            foreach (DataColumn col in myDataTable.Columns)
+            {
+                object value = row[col.ColumnName];
+                command.Parameters.AddWithValue($"@{col.ColumnName.Replace(".", "_")}",
+                    value == DBNull.Value ? (object)DBNull.Value : value);
+            }
+
+            return command;
         }
 
         private void btnAdd2_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (myDataTable == null) return;
+                if (myDataTable == null)
+                {
+                    System.Windows.MessageBox.Show("请先加载数据!", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
                 DataRow newRow = myDataTable.NewRow();
 
-                // *** FIX 2: Calculate and assign a new Primary Key before adding the row ***
-                string pkColumnName = "No."; // Column name from the error message
-                if (myDataTable.Columns.Contains(pkColumnName))
+                if (myDataTable.PrimaryKey.Length > 0)
                 {
+                    string pkColumn = myDataTable.PrimaryKey[0].ColumnName;
+
                     int maxId = 0;
                     foreach (DataRow row in myDataTable.Rows)
                     {
-                        // Exclude already deleted rows from max ID calculation
-                        if (row.RowState != DataRowState.Deleted && row[pkColumnName] != DBNull.Value)
+                        if (row[pkColumn] != DBNull.Value)
                         {
-                            if (int.TryParse(row[pkColumnName].ToString(), out int currentId))
+                            int currentId;
+                            if (int.TryParse(row[pkColumn].ToString(), out currentId))
                             {
                                 if (currentId > maxId)
-                                {
                                     maxId = currentId;
-                                }
                             }
                         }
                     }
-                    newRow[pkColumnName] = maxId + 1;
+
+                    newRow[pkColumn] = maxId + 1;
                 }
 
                 myDataTable.Rows.Add(newRow);
-
                 dataGridView2.ScrollIntoView(newRow);
                 dataGridView2.SelectedItem = newRow;
+
                 UpdateStatus("已添加新行，请填写数据后保存");
             }
             catch (Exception ex)
@@ -499,44 +936,61 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 return;
             }
 
-            var result = System.Windows.MessageBox.Show($"确定要删除选中的 {dataGridView2.SelectedItems.Count} 行吗？\n删除后需要点击“保存修改”按钮以生效。", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show(
+                $"确定要删除选中的 {dataGridView2.SelectedItems.Count} 行吗？",
+                "确认删除",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
             if (result == MessageBoxResult.Yes)
             {
                 try
                 {
-                    var rowsToDelete = dataGridView2.SelectedItems.Cast<DataRowView>().ToList();
+                    var rowsToDelete = new List<DataRowView>();
+                    foreach (var item in dataGridView2.SelectedItems)
+                    {
+                        if (item is DataRowView rowView)
+                        {
+                            rowsToDelete.Add(rowView);
+                        }
+                    }
+
                     foreach (var rowView in rowsToDelete)
                     {
                         rowView.Row.Delete();
                     }
-                    UpdateStatus($"已标记 {rowsToDelete.Count} 行待删除。请点击“保存修改”来确认。");
+
+                    btnSave2_Click(sender, e);
+
+                    UpdateStatus($"已删除 {rowsToDelete.Count} 行");
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"标记删除失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"删除失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
 
         private void btnExport2_Click(object sender, RoutedEventArgs e)
         {
-            if (myDataTable == null || myDataTable.Rows.Count == 0)
+            try
             {
-                System.Windows.MessageBox.Show("没有数据可以导出!", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+                if (myDataTable == null || myDataTable.Rows.Count == 0)
+                {
+                    System.Windows.MessageBox.Show("没有数据可以导出!", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-            var saveDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "CSV 文件 (*.csv)|*.csv|所有文件 (*.*)|*.*",
-                FileName = $"{currentExperimentTable}_{DateTime.Now:yyyyMMdd}.csv"
-            };
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV 文件|*.csv|所有文件|*.*",
+                    FileName = $"{currentExperimentTable}_{DateTime.Now:yyyyMMdd}.csv"
+                };
 
-            if (saveDialog.ShowDialog() == true)
-            {
-                try
+                if (saveDialog.ShowDialog() == true)
                 {
                     var sb = new StringBuilder();
+
                     var headers = myDataTable.Columns.Cast<DataColumn>().Select(c => c.ColumnName);
                     sb.AppendLine(string.Join(",", headers));
 
@@ -545,9 +999,9 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                         var values = row.ItemArray.Select(v =>
                         {
                             string value = v?.ToString() ?? "";
-                            if (value.Contains(',') || value.Contains('\"'))
+                            if (value.Contains(",") || value.Contains("\""))
                             {
-                                return $"\"{value.Replace("\"", "\"\"")}\"";
+                                value = "\"" + value.Replace("\"", "\"\"") + "\"";
                             }
                             return value;
                         });
@@ -555,52 +1009,20 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                     }
 
                     System.IO.File.WriteAllText(saveDialog.FileName, sb.ToString(), Encoding.UTF8);
-                    System.Windows.MessageBox.Show($"? 导出成功!\n\n文件: {saveDialog.FileName}", "导出成功", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"导出失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    System.Windows.MessageBox.Show(
+                        $"✅ 导出成功!\n\n文件: {saveDialog.FileName}\n行数: {myDataTable.Rows.Count}",
+                        "导出成功",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                 }
             }
-        }
-
-        #endregion
-
-        #region Helper Methods
-        private void UpdateStatus(string message)
-        {
-            Dispatcher.Invoke(() => {
-                statusLabel.Text = message;
-                statusLabel2.Text = message;
-            });
-        }
-
-        /// <summary>
-        /// Helper method to force a DataGrid to commit any pending edits.
-        /// </summary>
-        private void ForceEndEdit(DataGrid grid)
-        {
-            if (grid == null) return;
-
-            // 这一行非常重要，它取消任何单元格级别的编辑
-            grid.CancelEdit(DataGridEditingUnit.Cell);
-            // 接下来，提交行级别的编辑
-            grid.CommitEdit(DataGridEditingUnit.Row, true);
-
-            // 然后，我们通过操作底层数据视图来强制提交挂起的事务
-            // 这是解决此问题的最可靠方法
-            if (grid.Items is IEditableCollectionView editableView)
+            catch (Exception ex)
             {
-                if (editableView.IsAddingNew)
-                {
-                    editableView.CommitNew();
-                }
-                else if (editableView.IsEditingItem)
-                {
-                    editableView.CommitEdit();
-                }
+                System.Windows.MessageBox.Show($"导出失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         #endregion
     }
-}
+    }
