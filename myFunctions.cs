@@ -91,21 +91,28 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             // 使用Linq来判断是否存在指定类型的元素，效率更高
             bool hasGas = elementSymbols.Any(symbol => GaseousElements.Contains(symbol));
             bool hasSolidOrLiquidNonMetal = elementSymbols.Any(symbol => SolidOrLiquidNonMetals.Contains(symbol));
+            bool hasOxygen = elementSymbols.Contains("O");
+            bool hasNonMetal = elementSymbols.Any(symbol =>
+        GaseousElements.Contains(symbol) || SolidOrLiquidNonMetals.Contains(symbol));
 
-            // 现在根据逻辑规则判断返回值
-            if (hasGas && hasSolidOrLiquidNonMetal)
+            // 根据新的逻辑规则判断返回值
+            if (hasGas)
             {
-                // 规则2: 当非金属元素与气体元素同时存在时，返回True
-                return true;
-            }
-            else if (hasGas) // 此条件意味着 hasSolidOrLiquidNonMetal 为 false
-            {
-                // 规则1: 当传入参数中有气体元素时(但没有非气态非金属)，返回False
-                return false;
+                // 有气体元素时，检查是否同时存在O和非金属
+                if (hasOxygen && hasNonMetal)
+                {
+                    // 规则2: 同时存在O和非金属时，返回True
+                    return true;
+                }
+                else
+                {
+                    // 规则1: 有气体但不满足例外条件时，返回False
+                    return false;
+                }
             }
             else
             {
-                // 规则3: 其他情况均返回True (例如，没有气体元素)
+                // 规则3: 没有气体元素时，返回True
                 return true;
             }
         }

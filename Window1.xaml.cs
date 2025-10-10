@@ -53,8 +53,8 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             Ternary_melts wagner_ = new Ternary_melts(info.Tem, info.state, info.entropy);
             MiedemaModel miedemaModel = new MiedemaModel();
             miedemaModel.setState(info.state);
-            miedemaModel.setTemperature(info.Tem);
-            miedemaModel.setEntropy(info.entropy);
+            
+            
 
             Extrapolation_Model selectedModelDelegate = GetModelDelegate(modelName, miedemaModel);
             if (selectedModelDelegate == null)
@@ -63,7 +63,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 return;
             }
 
-            double sij_UEM1 = wagner_.Activity_Interact_Coefficient_Model(solv, solui, soluj, selectedModelDelegate, info.state);
+            double sij_UEM1 = wagner_.Activity_Interact_Coefficient_Model(solv, solui, soluj, info.Tem, selectedModelDelegate, info.state,modelName);
             Melt m1 = new Melt(k, i, j, info.Tem);
 
             Results.Add(new ResultRow

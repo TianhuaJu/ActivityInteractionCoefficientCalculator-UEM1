@@ -3,7 +3,7 @@
 
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
 {
-    delegate double Extrapolation_Model(string k, string A, string B, string extrapolationmodel);
+    delegate double Extrapolation_Model(string k, string A, string B, double T, string extrapolationmodel);
 
     class Ternary_melts
     {
@@ -56,7 +56,8 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         
 
       
-        /// <summary>        
+        /// <summary>  
+        /// 是否考虑过剩熵依据外部计算条件
         /// </summary>
         /// <param name="Ei"></param>
         /// <param name="Ej"></param>
@@ -179,7 +180,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// <param name="geo_Model"></param>
         /// <param name="GeoModel"></param>
         /// <returns></returns>
-        public double Activity_Interact_Coefficient_Model(Element solv, Element solui, Element soluj, Extrapolation_Model geo_Model, string state)
+        public double Activity_Interact_Coefficient_Model(Element solv, Element solui, Element soluj, double T, Extrapolation_Model geo_Model, string state,string modelName = "UEM1")
         {
           
 
@@ -196,20 +197,21 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             double omaga_ij = 0, omaga_ik = 0, omaga_jk = 0, d_omaga_ik_j = 0, d_omaga_jk_i = 0, Via, Vja;
 
 
-            aji_ik = geo_Model(soluj.Name, solui.Name, solv.Name, state);
-            ajk_ik = geo_Model(soluj.Name, solv.Name, solui.Name, state);
-            aij_jk = geo_Model(solui.Name, soluj.Name, solv.Name, state);
-            aki_ij = geo_Model(solv.Name, solui.Name, soluj.Name, state);
-            akj_ij = geo_Model(solv.Name, soluj.Name, solui.Name, state);
-            aik_jk = geo_Model(solui.Name, solv.Name, soluj.Name, state);
+            aji_ik = geo_Model(soluj.Name, solui.Name, solv.Name, T,state);
+            ajk_ik = geo_Model(soluj.Name, solv.Name, solui.Name, T, state);
+            aij_jk = geo_Model(solui.Name, soluj.Name, solv.Name, T, state);
+            aki_ij = geo_Model(solv.Name, solui.Name, soluj.Name, T, state);
+            akj_ij = geo_Model(solv.Name, soluj.Name, solui.Name, T, state);
+            aik_jk = geo_Model(solui.Name, solv.Name, soluj.Name, T, state);
 
          
 
-            string fileName = filePath  + "ContributionCoefficient(UEM1).txt";
-            string content = string.Format("{0}-{1}: \t {3}, \t {0}-{2}: \t {4} \t in ( {1}-{2})\n" +
-                                           "{1}-{0}: \t {8}, \t {1}-{2}: \t {7} \t in ( {2}-{0})\n" +
-                                           "{2}-{1}: \t {5}, \t {2}-{0}: \t {6} \t in ( {1}-{0})\n",
-                                           solv.Name, solui.Name, soluj.Name, aki_ij, akj_ij, aji_ik, ajk_ik, aij_jk, aik_jk);
+            string fileName = filePath  + "ContributionCoefficient(" + modelName + ").txt";
+            string content = string.Format("T = {0} K \n" + 
+                                           "{1}-{2}: \t {4}, \t {1}-{3}: \t {5} \t in ( {2}-{3})\n" +
+                                           "{2}-{1}: \t {9}, \t {2}-{3}: \t {8} \t in ( {3}-{1})\n" +
+                                           "{3}-{2}: \t {6}, \t {3}-{1}: \t {7} \t in ( {2}-{1})\n",
+                                           Tem, solv.Name, solui.Name, soluj.Name, aki_ij, akj_ij, aji_ik, ajk_ik, aij_jk, aik_jk);
 
             myFunctions.WriteLog(fileName, content);
             if (aki_ij == 0 && akj_ij == 0)
@@ -217,15 +219,13 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 aki_ij = akj_ij = 0.5;
             }
 
-            Via = (1 + solui.u * (solui.Phi - soluj.Phi) * akj_ij / (aki_ij + akj_ij)) * solui.V;
-            Vja = (1 + soluj.u * (soluj.Phi - solui.Phi) * aki_ij / (aki_ij + akj_ij)) * soluj.V;
+            Via = (1 + solui.u * (solui.Phi - soluj.Phi) * akj_ij*soluj.V / (aki_ij*solui.V + akj_ij*soluj.V)) * solui.V;
+            Vja = (1 + soluj.u * (soluj.Phi - solui.Phi) * aki_ij*solui.V / (aki_ij * solui.V + akj_ij * soluj.V)) * soluj.V;
             omaga_ij = fij * Via * Vja * (aki_ij + akj_ij) / (aki_ij * Via + akj_ij * Vja);
             omaga_ik = fik * solui.V * (1 + solui.u * (solui.Phi - solv.Phi));
             omaga_jk = fjk * soluj.V * (1 + soluj.u * (soluj.Phi - solv.Phi));
             d_omaga_ik_j = aji_ik * omaga_ik * (1 - solui.V / solv.V * (1 + 2 * solui.u * (solui.Phi - solv.Phi)));
-            d_omaga_jk_i = aij_jk * omaga_jk * (1 - soluj.V / solv.V * (1 + 2 * soluj.u * (soluj.Phi - solv.Phi)));
-
-        
+            d_omaga_jk_i = aij_jk * omaga_jk * (1 - soluj.V / solv.V * (1 + 2 * soluj.u * (soluj.Phi - solv.Phi)));        
             
             omaga_ik = fik * solui.V * (1 + solui.u * (solui.Phi - solv.Phi));
             omaga_jk = fjk * soluj.V * (1 + soluj.u * (soluj.Phi - solv.Phi));

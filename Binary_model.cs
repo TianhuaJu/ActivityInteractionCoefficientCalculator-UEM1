@@ -52,10 +52,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             this._lammda = n;
 
         }
-        public void setEntropy(bool is_sE)
-        {
-            this.isEntropy = is_sE;
-        }
+      
 
         protected double Abs(double x)
         { return Math.Abs(x); }
@@ -152,13 +149,23 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
 
 
+        /// <summary>
+        /// 含气体元素的体系忽略过剩熵，但O与非金属元素的情况除外
+        /// 该函数主要用于计算贡献系数相关值，始终按规则考虑过剩熵
+        /// </summary>
+        /// <param name="A"></param>
+        /// <param name="B"></param>
+        /// <param name="Xa"></param>
+        /// <param name="Xb"></param>
+        /// <returns></returns>
         public double Excess_gibbs_Energy(string A, string B, double Xa, double Xb)
         {
             setPairElement(A, B);
 
             double f_AB = fab(this.Ea, this.Eb, this.state);
             double entropy_term = 0;
-            if (this.isEntropy)
+            bool setEntropyFlag = myFunctions.EntropyJudge(A,B);
+            if (setEntropyFlag)
             {
                 double avg_Tm = 1.0 / this.Ea.Tm + 1.0 / this.Eb.Tm;
                 if (this.state == "solid")
@@ -199,30 +206,75 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         public string asymmetricComponent_Judge(string k, string i, string j) 
         {
-            double dki, dkj,dij;
-            dki = Excess_gibbs_Energy(k,i,0.5,0.5);
-            dkj = Excess_gibbs_Energy(k,j,0.5,0.5);
-            dij = Excess_gibbs_Energy(i,j,0.5,0.5);
-            double T;
-            T = myFunctions.asymtermJudge(dki,dkj,dij);
-            if (T == dki)
+            double bik, bjk,bij;
+            bik = Excess_gibbs_Energy(k,i,0.5,0.5);
+            bjk = Excess_gibbs_Energy(k,j,0.5,0.5);
+            bij = Excess_gibbs_Energy(i,j,0.5,0.5);
+            bool allSameSign = (bij > 0 && bik > 0 && bjk > 0) || (bij < 0 && bik < 0 && bjk < 0);
+
+            if (allSameSign)
             {
-                return j;
-            }
-            else if (T == dkj)
-            {
-                return i;
+                // --- 情况1: 符号全部相同 ---
+                // 找出与绝对值最小的混合焓“相对”的那个组元。
+                // k 对应 |bij| (i-j)
+                // j 对应 |bik| (i-k)
+                // i 对应 |bjk| (j-k)
+
+                double abs_bij = Math.Abs(bij);
+                double abs_bik = Math.Abs(bik);
+                double abs_bjk = Math.Abs(bjk);
+
+                if (abs_bij <= abs_bik && abs_bij <= abs_bjk)
+                {
+                    // |bij| 最小，选择 k
+                    return k;
+                }
+                else if (abs_bik <= abs_bij && abs_bik <= abs_bjk)
+                {
+                    // |bik| 最小，选择 j
+                    return j;
+                }
+                else
+                {
+                    // |bjk| 最小，选择 i
+                    return i;
+                }
             }
             else
             {
-                return k;
+                // --- 情况2: 符号存在不同 ---
+                // 找出与其他两个符号不同的那个二元系中的“独特”组元。
+                // 例如，如果 bij 和 bik 符号相同，那么 i 就是它们的公共组元。
+                if (bij * bik > 0)
+                {
+                    // bij(i-j) 和 bik(i-k) 符号相同, 公共组元是 i
+                    return i;
+                }
+                else if (bij * bjk > 0)
+                {
+                    // bij(i-j) 和 bjk(j-k) 符号相同, 公共组元是 j
+                    return j;
+                }
+                else
+                {
+                    // 剩下的情况必然是 bik(i-k) 和 bjk(j-k) 符号相同, 公共组元是 k
+                    return k;
+                }
             }
 
-            
+
         }
 
  
          
+        /// <summary>
+        /// UEM1中的贡献系数计算，采用无限稀活度系数之差，考虑过剩熵条件下计算的结果
+        /// </summary>
+        /// <param name="k"></param>
+        /// <param name="i"></param>
+        /// <param name="T"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
         public double kexi(string k, string i, double T, string state = "liquid")
         {
 
@@ -235,7 +287,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
             double fik, dHtrans_i = 0, dHtrans_slv = 0, dHtrans = 0;
            
-            if (!new[] { "H", "O", "N" }.Contains(i) && !new[] { "H", "O", "N" }.Contains(k))
+            if (myFunctions.EntropyJudge(k,i))
             {
                 if (state == "liquid")
                 {
@@ -290,16 +342,17 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             return Abs(lnyk0_i - lnyi0_k);
         }
 
-        public double get_Dki_interactive1(string k, string i,  double T, string state = "liquid")
+        public double get_Dki_interactive1(string k, string i, string j, double T, string state = "liquid")
         {
-            //j.mol.liq.2020
-            this.setEntropy(myFunctions.EntropyJudge(k,i));
+            //j.mol.liq.2020            
             
             this.T = T;
-            Func<double, double> gki = x =>this.Excess_gibbs_Energy(k,i,x,1-x);
-            double Average_gki = myFunctions.Integrate(gki, 0, 1);
+            Func<double, double> gkj = x =>this.Excess_gibbs_Energy(k,j,x,1-x);
+            Func<double,double> gij = x=>this.Excess_gibbs_Energy(i,j,x,1-x);
+            double Average_gkj = myFunctions.Integrate(gkj, 0, 1) / (Constant.R * T);
+            double Average_gij = myFunctions.Integrate(gij, 0, 1) / (Constant.R * T);
 
-            return Average_gki/(Constant.R*T);
+            return Abs(Average_gkj-Average_gij)/Abs(Average_gij+Average_gkj);
 
         }
         /// <summary>
@@ -311,13 +364,8 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// <returns></returns>
         public (double x, double y) get_GraphicCenter(string k, string i, double temperature, string phaseState = "liquid")
         {
-           
+           this.setState(phaseState);
             
-
-            this.setEntropy(myFunctions.EntropyJudge(k, i));
-            this.setPairElement(i, k);
-            this.setState("liquid");
-            this.setTemperature(temperature);
             Func<double, double> func_x = x => this.Excess_gibbs_Energy(k, i, x, 1 - x) * 1000;
             Func<double, double> xfunc_x = x => x * func_x(x);
             Func<double, double> func_x2 = x => func_x(x) * func_x(x);
@@ -385,7 +433,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         public double GSM_deviation_Function(string k, string A, string B, double T)
         {
-            this.setEntropy(myFunctions.EntropyJudge(k, A,B));
+            
             Func<double, double> func = x => this.Excess_gibbs_Energy(A, B, x, 1 - x) -
                 this.Excess_gibbs_Energy(A, k, x, 1 - x);
 
@@ -407,12 +455,9 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// <param name="j"></param>
         /// <param name="mode"></param>
         /// <returns></returns>
-        public double UEM1(string k, string i, string j, string state)
+        public double UEM1(string k, string i, string j, double T, string state)
         {
-            double alpha_KA;
-          
-
-
+            double alpha_KA;          
            
             double weight1 = 0;
            
@@ -438,27 +483,23 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             return alpha_KA;
         }
 
-        public double UEM2(string k, string i, string j, string state) 
+        public double UEM2(string k, string i, string j, double T, string state) 
         {
-            double wkj = get_Dki_interactive1(k, j, T, state);
-            double wij = get_Dki_interactive1(i,j,T,state);
-             
-            double wki = get_Dki_interactive1(k, i, T, state);
-            double wji = get_Dki_interactive1(j, i, T, state);
+            //j.mol.liq.2020
 
-            double dki = Abs(wkj-wij)/Abs(wkj+wij);
-            double dkj = Abs(wki-wji)/Abs(wki+wji);
+            double dki = get_Dki_interactive1(k, i,j, T, state);
+            double dkj = get_Dki_interactive1(k, j,i, T, state);
 
             return dkj/(dkj+dki)*Math.Exp(-dki);
         }
-        public double UEM2_Adv(string k, string i, string j, string state)
+        public double UEM2_Adv(string k, string i, string j, double T, string state)
         {
             double dki = get_Dki_interactive_Adv(k,i,j,T,state);
             double dkj = get_Dki_interactive_Adv(k,j,i,T,state);
 
             return dkj / (dkj + dki) * Math.Exp(-dki);
         }
-        public double Toop_Kohler(string k, string i, string j, string state)
+        public double Toop_Kohler(string k, string i, string j, double T, string state)
         {
             string asymc = asymmetricComponent_Judge(k, i, j);
             if (asymc == i) { return 0; }
@@ -469,7 +510,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             }
             
         }
-        public double Toop_Muggianu(string k, string i, string j, string state)
+        public double Toop_Muggianu(string k, string i, string j, double T, string state)
         {
             string asymc = asymmetricComponent_Judge(k, i, j);
             if (asymc == i) { return 0; }
@@ -479,13 +520,13 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 return 0.5;
             }
         }
-        public double GSM(string k, string i, string j, string state)
+        public double GSM(string k, string i, string j, double T, string state)
         {
             double dki = GSM_deviation_Function(k, i, j,T);
             double dkj = GSM_deviation_Function(k, j, i, T);
-            return dkj/(dki+dkj);
+            return dki/(dki+dkj);
         }
-        public double Muggianu(string k, string i, string j, string state)
+        public double Muggianu(string k, string i, string j, double T, string state)
         {
             return 0.5;
         }
