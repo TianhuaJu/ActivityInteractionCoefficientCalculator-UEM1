@@ -332,43 +332,96 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- 修改后的 Activity Coefficient 显示区域 -->
                         <Border Grid.Row="0" Grid.Column="2"
-                                Style="{StaticResource ResultDisplayBorder}"
-                                VerticalAlignment="Top"
-                                Height="80"
-                                MinWidth="180">
+        Style="{StaticResource ResultDisplayBorder}"
+        VerticalAlignment="Top"
+        Height="80"
+        MinWidth="180">
                             <StackPanel Orientation="Vertical">
                                 <TextBlock Text="Activity Coefficient" 
-                                           FontWeight="Bold" 
-                                           FontSize="12"
-                                           HorizontalAlignment="Center" 
-                                           Foreground="#2E7D32"
-                                           Margin="0,0,0,5"/>
+                   FontWeight="Bold" 
+                   FontSize="12"
+                   HorizontalAlignment="Center" 
+                   Foreground="#2E7D32"
+                   Margin="0,0,0,5"/>
 
-                                <TextBlock HorizontalAlignment="Center" TextWrapping="NoWrap">
-                                    <Run Text="ln " FontSize="17" Foreground="#1B5E20" FontWeight="SemiBold"/>
-                                    <Run Text="γ" FontSize="17" Foreground="#1B5E20" FontWeight="SemiBold" FontFamily="Cambria Math"/>
-                                    <Run x:Name="gammaSubscript_run" 
-                                         Text="i" 
-                                         FontSize="12" 
-                                         Foreground="#1B5E20"
-                                         FontWeight="SemiBold"
-                                         BaselineAlignment="Subscript"/>
-                                    <Run Text="⁰" 
-                                         FontSize="12" 
-                                         Foreground="#1B5E20"
-                                         FontWeight="SemiBold"
-                                         BaselineAlignment="Superscript"/>
-                                    <Run Text=" = " FontSize="17" Foreground="#1B5E20" FontWeight="SemiBold"/>
-                                    <Run x:Name="gammaValue_run" 
-                                         Text="--" 
-                                         FontSize="17" 
-                                         Foreground="#1B5E20" 
-                                         FontWeight="Bold"/>
-                                </TextBlock>
+                                <!-- 修改后的公式显示部分 -->
+                                <Grid HorizontalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- ln 部分 -->
+                                    <TextBlock Grid.Column="0"
+                       Text="ln " 
+                       FontSize="17" 
+                       Foreground="#1B5E20" 
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       Margin="0,0,2,0"/>
+
+                                    <!-- γ 部分 -->
+                                    <TextBlock Grid.Column="1"
+                       Text="γ" 
+                       FontSize="17" 
+                       Foreground="#1B5E20" 
+                       FontWeight="SemiBold" 
+                       FontFamily="Cambria Math"
+                       VerticalAlignment="Center"
+                       Margin="0,0,0,0"/>
+
+                                    <!-- 上下标部分：⁰ 的底部对齐 γ 的顶部，⁰ 和 i 在同一垂直线 -->
+                                    <Grid Grid.Column="2" VerticalAlignment="Center" Height="20" Margin="0,0,2,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- 上标 ⁰：在上半部分的底部 -->
+                                        <TextBlock Grid.Row="0" 
+                           Text="⁰" 
+                           FontSize="10" 
+                           Foreground="#1B5E20"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Bottom"/>
+
+                                        <!-- 下标 i：在下半部分的顶部 -->
+                                        <TextBlock Grid.Row="1"
+                           x:Name="gammaSubscript_run" 
+                           Text="i" 
+                           FontSize="12" 
+                           Foreground="#1B5E20"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"/>
+                                    </Grid>
+
+                                    <!-- = 部分 -->
+                                    <TextBlock Grid.Column="3"
+                       Text=" = " 
+                       FontSize="17" 
+                       Foreground="#1B5E20" 
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       Margin="2,0,2,0"/>
+
+                                    <!-- 值部分 -->
+                                    <TextBlock Grid.Column="4"
+                       x:Name="gammaValue_run" 
+                       Text="--" 
+                       FontSize="17" 
+                       Foreground="#1B5E20" 
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
-
                         <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Bottom">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
