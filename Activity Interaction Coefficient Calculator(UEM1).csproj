@@ -4,7 +4,7 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <RootNamespace>Activity_Interaction_Coefficient_Calculator_UEM1</RootNamespace>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
+    
 	<UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageIcon>Snipaste_2024-12-05_11-09-16.jpg</PackageIcon>

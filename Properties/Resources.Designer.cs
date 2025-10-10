@@ -80,34 +80,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1.Properties {
             }
         }
         
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        public static System.Drawing.Bitmap nws {
-            get {
-                object obj = ResourceManager.GetObject("nws", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        public static System.Drawing.Bitmap phi {
-            get {
-                object obj = ResourceManager.GetObject("phi", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        public static System.Drawing.Bitmap v {
-            get {
-                object obj = ResourceManager.GetObject("v", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
+       
+       
     }
 }

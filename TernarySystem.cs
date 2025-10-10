@@ -108,9 +108,66 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         {
             return Math.Pow(x, y);
         }
-  
-        
-     
+
+
+        public double lngama_i0(string solvent, string solutei, double tem, string state)
+        {
+            bool entropy = myFunctions.EntropyJudge(solvent,solutei);
+            setEntropy(entropy);
+            Element Ei = new Element(solutei);
+            Element Ek = new Element(solvent);
+            double avg_Tm = 1.0 / Ei.Tm + 1.0 / Ek.Tm;
+
+            double lnyi0_k, sij;
+
+            double fik, dHtrans_i = 0, dHtrans_slv = 0, dHtrans = 0;
+
+            if (!new[] { "H", "O", "N" }.Contains(solutei) && !new[] { "H", "O", "N" }.Contains(solvent))
+            {
+                if (state == "liquid")
+                {
+                    sij = 1.0 / 14 * tem * avg_Tm;
+
+                }
+                else
+                {
+                    sij = 1.0 / 15.1 * tem * avg_Tm;
+                }
+            }
+            else
+            {
+                sij = 0;
+            }
+
+
+            fik = fab_func_ContainS(Ek,Ei);
+
+            List<string> elemets_lst = new List<string>() { "Si", "Ge" };
+            dHtrans_i = Ei.dH_Trans;
+            dHtrans_slv = Ek.dH_Trans;
+
+            if (state == "liquid")
+            {
+                if (elemets_lst.Contains(Ei.Name))
+                {
+                    dHtrans_i = 0;
+                }
+
+
+                if (elemets_lst.Contains(Ek.Name))
+                {
+                    dHtrans_slv = 0;
+                }
+
+            }
+
+            dHtrans = dHtrans_i - dHtrans_slv;
+
+            lnyi0_k = 1000 * fik * Ei.V * (1 + Ei.u * (Ei.Phi - Ek.Phi)) / (Constant.R * tem) + 1000 * dHtrans / (Constant.R * tem);
+
+            return lnyi0_k;
+
+        }
        
         
         /// <summary>

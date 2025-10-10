@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data;
+﻿using MathNet.Numerics.Integration;
 using System.IO;
 
 
@@ -77,8 +72,59 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 return (a * b > 0) ? c : (a * c > 0 ? b : a);
             }
         }
+        private static readonly HashSet<string> GaseousElements = new HashSet<string>
+    {
+        "H", "He", "N", "O", "F", "Ne", "Cl", "Ar", "Kr", "Xe", "Rn"
+    };
+        private static readonly HashSet<string> SolidOrLiquidNonMetals = new HashSet<string>
+    {
+        "C", "P", "S", "Se", "Br", "I", "At"
+    };
+        public static bool EntropyJudge(params string[] elementSymbols)
+        {
+            if (elementSymbols == null || !elementSymbols.Any())
+            {
+                // 如果列表为空或为null，属于“其他情况”，返回True
+                return true;
+            }
 
-        
+            // 使用Linq来判断是否存在指定类型的元素，效率更高
+            bool hasGas = elementSymbols.Any(symbol => GaseousElements.Contains(symbol));
+            bool hasSolidOrLiquidNonMetal = elementSymbols.Any(symbol => SolidOrLiquidNonMetals.Contains(symbol));
+
+            // 现在根据逻辑规则判断返回值
+            if (hasGas && hasSolidOrLiquidNonMetal)
+            {
+                // 规则2: 当非金属元素与气体元素同时存在时，返回True
+                return true;
+            }
+            else if (hasGas) // 此条件意味着 hasSolidOrLiquidNonMetal 为 false
+            {
+                // 规则1: 当传入参数中有气体元素时(但没有非气态非金属)，返回False
+                return false;
+            }
+            else
+            {
+                // 规则3: 其他情况均返回True (例如，没有气体元素)
+                return true;
+            }
+        }
+        public static double Integrate(Func<double, double> function,
+                                       double lowerBound,
+                                       double upperBound,
+                                       double relativeTolerance = 1e-8)
+        {
+            double error, L1Norm;
+            return GaussKronrodRule.Integrate(
+                function,
+                lowerBound,
+                upperBound,                
+                out error,
+                out L1Norm,
+                targetRelativeError:relativeTolerance
+
+            );
+        }
         /// <summary>
         /// 一阶相互作用系数单位转换,m to w
         /// </summary>

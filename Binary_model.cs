@@ -109,9 +109,10 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             double new_VAa, new_VBa;
             double ya, yb;
             ya = xa / (xa + xb);
-            yb = xb / (xb + xb);
+            yb = xb / (xa + xb);
 
             DateTime start = DateTime.Now;
+            double tolerance = 1e-9;
             if (Ea.Name == "H" || Eb.Name == "H")
             {
                 //H与其它元素形成有序化合物时，合金中的体积
@@ -132,7 +133,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                         break;
                     }
 
-                } while (VAa != new_VAa && VBa != new_VBa);
+                } while (Math.Abs(VAa - new_VAa) > tolerance || Math.Abs(VBa - new_VBa) > tolerance);
 
             }
             else
@@ -151,7 +152,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
 
 
-        public double gibbs_Energy_binary(string A, string B, double Xa, double Xb)
+        public double Excess_gibbs_Energy(string A, string B, double Xa, double Xb)
         {
             setPairElement(A, B);
 
@@ -196,12 +197,12 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         }
 
 
-        public string asymmericComponent_Judge(string k, string i, string j) 
+        public string asymmetricComponent_Judge(string k, string i, string j) 
         {
             double dki, dkj,dij;
-            dki = gibbs_Energy_binary(k,i,0.5,0.5);
-            dkj = gibbs_Energy_binary(k,j,0.5,0.5);
-            dij = gibbs_Energy_binary(i,j,0.5,0.5);
+            dki = Excess_gibbs_Energy(k,i,0.5,0.5);
+            dkj = Excess_gibbs_Energy(k,j,0.5,0.5);
+            dij = Excess_gibbs_Energy(i,j,0.5,0.5);
             double T;
             T = myFunctions.asymtermJudge(dki,dkj,dij);
             if (T == dki)
@@ -280,6 +281,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             return lnyi0_k;
             
         }
+   
 
         public double get_Dki_Nointeractive(string k, string i, double T, string state = "liquid")
         { 
@@ -291,11 +293,11 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         public double get_Dki_interactive1(string k, string i,  double T, string state = "liquid")
         {
             //j.mol.liq.2020
-            this.setEntropy(true);
+            this.setEntropy(myFunctions.EntropyJudge(k,i));
             
             this.T = T;
-            Func<double, double> gki = x =>this.gibbs_Energy_binary(k,i,x,1-x);
-            double Average_gki = Integrate.OnClosedInterval(gki, 0, 1);
+            Func<double, double> gki = x =>this.Excess_gibbs_Energy(k,i,x,1-x);
+            double Average_gki = myFunctions.Integrate(gki, 0, 1);
 
             return Average_gki/(Constant.R*T);
 
@@ -307,17 +309,16 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// <param name="i">1-xk</param>
         /// <param name="phaseState"></param>
         /// <returns></returns>
-        public (double x, double y) get_GraphicCenter(string k, string i, string phaseState = "liquid")
+        public (double x, double y) get_GraphicCenter(string k, string i, double temperature, string phaseState = "liquid")
         {
-            Element Ei = null;
-            Element Ek = null;
+           
             
 
-            this.setEntropy(true);
+            this.setEntropy(myFunctions.EntropyJudge(k, i));
             this.setPairElement(i, k);
             this.setState("liquid");
-            this.setTemperature(T);
-            Func<double, double> func_x = x => this.gibbs_Energy_binary(k, i, x, 1 - x) * 1000;
+            this.setTemperature(temperature);
+            Func<double, double> func_x = x => this.Excess_gibbs_Energy(k, i, x, 1 - x) * 1000;
             Func<double, double> xfunc_x = x => x * func_x(x);
             Func<double, double> func_x2 = x => func_x(x) * func_x(x);
 
@@ -326,11 +327,11 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             double y;
 
 
-            string cond1 = i + k + this.lammda + this.state + this.T;
+            
 
-            x_bar = Integrate.OnClosedInterval(xfunc_x, 0, 1);
-            A = Integrate.OnClosedInterval(func_x, 0, 1);
-            y = Integrate.OnClosedInterval(func_x2, 0, 1);
+            x_bar = myFunctions.Integrate(xfunc_x, 0, 1);
+            A = myFunctions.Integrate(func_x, 0, 1);
+            y = myFunctions.Integrate(func_x2, 0, 1);
 
 
             double x_ = x_bar / A;
@@ -363,8 +364,8 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         public double get_Dki_interactive_Adv(string k, string i, string j, double T, string state = "liquid")
         {
             double xkj, xij, ykj, yij;
-            (xij, yij) = get_GraphicCenter(i, j);
-            (xkj, ykj) = get_GraphicCenter(k, j);
+            (xij, yij) = get_GraphicCenter(i, j,T,state);
+            (xkj, ykj) = get_GraphicCenter(k, j, T,state);
 
             double hx1_x2 = Abs(xij - xkj) / Abs(xij + xkj);
             double ty1_y2 = Math.Exp(Abs(yij - ykj) / Abs(yij + ykj));
@@ -384,12 +385,13 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
         public double GSM_deviation_Function(string k, string A, string B, double T)
         {
-            Func<double, double> func = x => this.gibbs_Energy_binary(A, B, x, 1 - x) -
-                this.gibbs_Energy_binary(A, k, x, 1 - x);
+            this.setEntropy(myFunctions.EntropyJudge(k, A,B));
+            Func<double, double> func = x => this.Excess_gibbs_Energy(A, B, x, 1 - x) -
+                this.Excess_gibbs_Energy(A, k, x, 1 - x);
 
             Func<double, double> func2 = x => func(x) * func(x);
             double f;
-            f = Integrate.OnClosedInterval(func2, 0, 1);
+            f = myFunctions.Integrate(func2, 0, 1);
             return f;
 
         }
@@ -430,7 +432,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             weight1 = df_KJ / (df_KI + df_KJ);
 
             alpha_KA = Math.Exp(-df_KI) * weight1;
-            System.GC.Collect();
+           
 
 
             return alpha_KA;
@@ -458,7 +460,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         }
         public double Toop_Kohler(string k, string i, string j, string state)
         {
-            string asymc = asymmericComponent_Judge(k, i, j);
+            string asymc = asymmetricComponent_Judge(k, i, j);
             if (asymc == i) { return 0; }
             else if (asymc == j) { return 1.0; }
             else
@@ -469,7 +471,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         }
         public double Toop_Muggianu(string k, string i, string j, string state)
         {
-            string asymc = asymmericComponent_Judge(k, i, j);
+            string asymc = asymmetricComponent_Judge(k, i, j);
             if (asymc == i) { return 0; }
             else if (asymc == j) { return 1.0; }
             else

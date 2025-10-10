@@ -28,13 +28,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         }
         public string Name { get; set; }
         public Boolean isTrans_group { get; set; }
-        
-      
-     
-     
-      
-      
-
+ 
         public Element( string name )
         {
             

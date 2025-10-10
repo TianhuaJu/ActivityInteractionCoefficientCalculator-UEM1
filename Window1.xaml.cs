@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Documents; // 新增：Run 元素需要
 
 namespace Activity_Interaction_Coefficient_Calculator_UEM1
 {
@@ -13,6 +15,9 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             InitializeComponent();
             Results = new ObservableCollection<ResultRow>();
             ResultDataGrid.ItemsSource = Results;
+
+            // 初始化 ln γᵢ⁰ 显示
+            UpdateGammaSubscript();
         }
 
         private string getState()
@@ -74,7 +79,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
                 Model = modelName
             });
 
-            System.GC.Collect();
+
         }
 
         private Extrapolation_Model GetModelDelegate(string modelName, MiedemaModel modelInstance)
@@ -92,7 +97,6 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             }
         }
 
-        // *** 已修改此方法以更新新的 TextBlock 控件 ***
         private void display(string k, string i, string j)
         {
             if (string.IsNullOrWhiteSpace(k) || string.IsNullOrWhiteSpace(i) || string.IsNullOrWhiteSpace(j)) return;
@@ -138,9 +142,11 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
             display(k, i, j);
             filldata_dgV(k, i, j, info, modelName);
+
+            // 计算并更新 ln γᵢ⁰ 显示值
+            UpdateGammaValue(k, i, info);
         }
 
-        // *** 已修改此方法以清空新的 TextBlock 控件 ***
         private void clearbtn_Click(object sender, RoutedEventArgs e)
         {
             k_comboBox.Text = string.Empty;
@@ -160,6 +166,10 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             jNws_text.Text = string.Empty;
             jV_text.Text = string.Empty;
 
+            // 清空 ln γᵢ⁰ 显示
+            gammaSubscript_run.Text = "i";
+            gammaValue_run.Text = "--";
+
             Results.Clear();
         }
 
@@ -169,6 +179,108 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             dbManager.Owner = this;
             dbManager.ShowDialog();
         }
+
+        #region ln γᵢ⁰ 显示功能
+
+        /// <summary>
+        /// 当 Solute (i) ComboBox 选择改变时，更新 ln γᵢ⁰ 的下标 i
+        /// </summary>
+        private void i_comboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateGammaSubscript();
+        }
+
+        /// <summary>
+        /// 当 Solute (i) ComboBox 文本输入时，更新 ln γᵢ⁰ 的下标 i
+        /// </summary>
+        private void i_comboBox_TextInput(object sender, TextCompositionEventArgs e)
+        {
+            // 延迟更新以确保文本已经更改
+            Dispatcher.BeginInvoke(new System.Action(() => UpdateGammaSubscript()));
+        }
+
+        /// <summary>
+        /// 更新 ln γᵢ⁰ 显示中的下标 i
+        /// 根据 Solute (i) 输入框的当前值自动更新下标
+        /// </summary>
+        private void UpdateGammaSubscript()
+        {
+            if (i_comboBox != null && gammaSubscript_run != null)
+            {
+                string selectedElement = i_comboBox.Text?.Trim();
+
+                if (!string.IsNullOrEmpty(selectedElement))
+                {
+                    gammaSubscript_run.Text = selectedElement;
+                }
+                else
+                {
+                    gammaSubscript_run.Text = "i";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 更新 ln γᵢ⁰ 的计算值
+        /// 这是一个占位函数，具体实现由您完成
+        /// </summary>
+        /// <param name="k">Matrix 元素</param>
+        /// <param name="i">Solute (i) 元素</param>
+        /// <param name="info">计算参数（状态、熵、温度）</param>
+        private void UpdateGammaValue(string k, string i, (string state, bool entropy, double Tem) info)
+        {
+            // TODO: 在这里实现您的 ln γᵢ⁰ 计算逻辑
+            try
+            {
+                if (string.IsNullOrWhiteSpace(k) || string.IsNullOrWhiteSpace(i))
+                {
+                    gammaValue_run.Text = "--";
+                    return;
+                }
+
+                Element solvent = new Element(k);
+                Element solute = new Element(i);
+
+                if (!solvent.isExist || !solute.isExist)
+                {
+                    gammaValue_run.Text = "--";
+                    return;
+                }
+
+                // 执行您的计算逻辑
+                double lnGamma = CalculateActivityCoefficient(solvent, solute, info);
+
+                // 更新显示，保留3位小数
+                gammaValue_run.Text = lnGamma.ToString("F3");
+            }
+            catch
+            {
+                gammaValue_run.Text = "--";
+            }
+
+
+        }
+
+        /// <summary>
+        /// 计算活度系数 ln γᵢ⁰ 的具体实现
+
+        /// </summary>
+        /// <param name="solvent">溶剂元素</param>
+        /// <param name="solute">溶质元素</param>
+        /// <param name="info">计算参数</param>
+        /// <returns>ln γᵢ⁰ 的值</returns>
+        private double CalculateActivityCoefficient(Element solvent, Element solute, (string state, bool entropy, double Tem) info)
+        {
+            // TODO: 在这里实现您的活度系数计算逻辑
+            // 返回 ln γᵢ⁰ 的值
+
+            // 占位返回值
+            Ternary_melts melts = new Ternary_melts(info.Tem, info.state, info.entropy);
+            double lnyi0 = melts.lngama_i0(solvent.Name, solute.Name, info.Tem, info.state);
+            return lnyi0;
+        }
+
+        #endregion
     }
 
     public class ResultRow
