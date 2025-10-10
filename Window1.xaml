@@ -140,9 +140,7 @@
                     </ComboBox>
                     <ComboBox x:Name="i_comboBox" Grid.Row="1" Grid.Column="1" 
                               Margin="5,0" Style="{StaticResource ModernComboBox}" 
-                              IsEditable="True"
-                              SelectionChanged="i_comboBox_SelectionChanged"
-                              TextInput="i_comboBox_TextInput">
+                              IsEditable="True">
                         <ComboBoxItem Content="Si"/>
                         <ComboBoxItem Content="Cr"/>
                         <ComboBoxItem Content="Mn"/>
