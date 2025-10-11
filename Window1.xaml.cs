@@ -181,6 +181,13 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             dbManager.ShowDialog();
         }
 
+        private void ConvertCoefficient_Click(object sender, RoutedEventArgs e)
+        {
+            CoefficientConverterWindow converter = new CoefficientConverterWindow();
+            converter.Owner = this;
+            converter.ShowDialog();
+        }
+
         #region ln γᵢ⁰ 显示功能
 
         // i_comboBox_SelectionChanged 和 i_comboBox_TextInput 方法已被删除

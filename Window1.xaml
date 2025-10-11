@@ -90,6 +90,9 @@
             <MenuItem Header="_数据库(_D)" FontSize="14">
                 <MenuItem Header="_管理数据库(_M)" Click="ManageDatabase_Click" FontSize="14"/>
             </MenuItem>
+            <MenuItem Header="_工具(_T)" FontSize="14">
+                <MenuItem Header="_活度相互作用系数转换(_C)" Click="ConvertCoefficient_Click" FontSize="14"/>
+            </MenuItem>
         </Menu>
 
         <Grid Margin="15">
