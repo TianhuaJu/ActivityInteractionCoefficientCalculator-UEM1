@@ -17,7 +17,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             ResultDataGrid.ItemsSource = Results;
 
             // 初始化 ln γᵢ⁰ 显示
-            UpdateGammaSubscript();
+            UpdateGammaSubscript(GetI_comboBox());
         }
 
         private string getState()
@@ -144,7 +144,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             filldata_dgV(k, i, j, info, modelName);
 
             // 在计算按钮点击后，更新下标和数值
-            UpdateGammaSubscript();
+            UpdateGammaSubscript(GetI_comboBox());
             UpdateGammaValue(k, i, info);
         }
 
@@ -188,6 +188,11 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
             converter.ShowDialog();
         }
 
+        private ComboBox GetI_comboBox()
+        {
+            return i_comboBox;
+        }
+
         #region ln γᵢ⁰ 显示功能
 
         // i_comboBox_SelectionChanged 和 i_comboBox_TextInput 方法已被删除
@@ -196,7 +201,7 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
         /// 更新 ln γᵢ⁰ 显示中的下标 i
         /// 根据 Solute (i) 输入框的当前值自动更新下标
         /// </summary>
-        private void UpdateGammaSubscript()
+        private void UpdateGammaSubscript(ComboBox i_comboBox)
         {
             if (i_comboBox != null && gammaSubscript_run != null)
             {
@@ -259,14 +264,14 @@ namespace Activity_Interaction_Coefficient_Calculator_UEM1
 
     public class ResultRow
     {
-        public string Solvent { get; set; }
-        public string I { get; set; }
-        public string J { get; set; }
-        public double Calculate { get; set; }
-        public string JSPS { get; set; }
-        public string Rank { get; set; }
-        public string Entropy { get; set; }
-        public double Temp { get; set; }
-        public string Model { get; set; }
+        public required string Solvent { get; set; }
+        public required string I { get; set; }
+        public required string J { get; set; }
+        public  double Calculate { get; set; }
+        public required string JSPS { get; set; }
+        public required string Rank { get; set; }
+        public required string  Entropy { get; set; }
+        public required double Temp { get; set; }
+        public required string Model { get; set; }
     }
 }

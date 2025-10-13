@@ -379,7 +379,7 @@
                        Margin="0,0,0,0"/>
 
                                     <!-- 上下标部分：⁰ 的底部对齐 γ 的顶部，⁰ 和 i 在同一垂直线 -->
-                                    <Grid Grid.Column="2" VerticalAlignment="Center" Height="20" Margin="0,0,2,0">
+                                    <Grid Grid.Column="2" VerticalAlignment="Center" Height="24" Margin="0,0,2,0">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
